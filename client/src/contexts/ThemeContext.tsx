@@ -1,35 +1,41 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { themeStorage, Theme } from '../services/themeStorage';
+import { createContext, useContext, useState, useLayoutEffect, useCallback, useMemo } from 'react';
+import { themeStorage } from '../services/themeStorage';
+import { getSchemeById, applyColorScheme } from '../colorSchemes';
+import type { ColorScheme } from '../colorSchemes';
 
 interface ThemeContextValue {
-  theme: Theme;
-  toggleTheme: () => void;
+  schemeId: string;
+  scheme: ColorScheme;
+  setScheme: (id: string) => void;
 }
 
-const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'light',
-  toggleTheme: () => {},
-});
+const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(themeStorage.get);
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [schemeId, setSchemeId] = useState<string>(() => themeStorage.get());
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    themeStorage.set(theme);
-  }, [theme]);
+  const scheme = useMemo(() => getSchemeById(schemeId), [schemeId]);
 
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
-  };
+  const setScheme = useCallback((id: string) => {
+    setSchemeId(id);
+    themeStorage.save(id);
+  }, []);
+
+  useLayoutEffect(() => {
+    applyColorScheme(scheme);
+  }, [scheme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ schemeId, scheme, setScheme }}>
       {children}
     </ThemeContext.Provider>
   );
 }
 
-export function useTheme() {
-  return useContext(ThemeContext);
+export function useTheme(): ThemeContextValue {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
 }
