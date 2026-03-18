@@ -1,0 +1,20 @@
+.content {
+  line-height: 1.7;
+  word-wrap: break-word;
+}
+
+.content h1, .content h2, .content h3 {
+  margin-top: 0.5em;
+  margin-bottom: 0.3em;
+}
+
+.content code {
+  background: var(--color-bg-tertiary);
+  padding: 0.15em 0.35em;
+  border-radius: var(--radius-sm);
+  font-size: 0.9em;
+}
+
+.content strong {
+  font-weight: 600;
+}

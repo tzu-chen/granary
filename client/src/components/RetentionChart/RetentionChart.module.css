@@ -1,0 +1,11 @@
+.container {
+  width: 100%;
+}
+
+.empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 2rem;
+}
