@@ -13,6 +13,9 @@ export interface EntryLink {
   label?: string;
 }
 
+export type EntryStatus = 'open' | 'resolved' | null;
+export type EntryPriority = 'high' | 'medium' | 'low' | null;
+
 export interface Entry {
   id: string;
   content: string;
@@ -21,6 +24,8 @@ export interface Entry {
   source?: string;
   links: EntryLink[];
   is_reviewable: boolean;
+  status: EntryStatus;
+  priority: EntryPriority;
   created_at: string;
   updated_at: string;
 }
@@ -95,6 +100,40 @@ export interface TagCount {
   tag: string;
   count: number;
 }
+
+export interface Resolution {
+  id: string;
+  entry_id: string;
+  resolution_entry_id: string;
+  resolved_at: string;
+}
+
+export interface EntryWithResolution extends Entry {
+  resolution?: {
+    id: string;
+    resolution_entry_id: string;
+    resolved_at: string;
+    resolution_content: string;
+    resolution_entry_type: string;
+    resolution_tags: string[];
+  };
+  resolution_of?: {
+    resolved_entry_id: string;
+  };
+}
+
+export interface OpenStats {
+  total: number;
+  by_priority: { priority: string; count: number }[];
+  by_entry_type: { entry_type: string; count: number }[];
+  by_tag: { tag: string; count: number }[];
+}
+
+export const PRIORITY_OPTIONS: { value: 'high' | 'medium' | 'low'; label: string }[] = [
+  { value: 'high', label: 'High' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'low', label: 'Low' },
+];
 
 export const ENTRY_TYPES: { value: EntryType; label: string }[] = [
   { value: 'note', label: 'Note' },

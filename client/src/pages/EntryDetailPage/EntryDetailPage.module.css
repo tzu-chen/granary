@@ -117,6 +117,82 @@
   text-transform: uppercase;
 }
 
+.resolvedBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-success);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statusActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.resolveBtn {
+  padding: 0.4rem 1rem;
+  background: var(--color-success);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: opacity var(--transition);
+}
+
+.resolveBtn:hover {
+  opacity: 0.9;
+}
+
+.reopenBtn {
+  padding: 0.4rem 1rem;
+  background: var(--color-warning);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: opacity var(--transition);
+}
+
+.reopenBtn:hover {
+  opacity: 0.9;
+}
+
+.resolutionSection {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-success);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.resolutionLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-success);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.resolutionContent {
+  margin-bottom: 0.5rem;
+}
+
+.resolutionMeta {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.resolutionOfNote {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-accent);
+}
+
 .backLink {
   margin-top: 1rem;
 }

@@ -30,7 +30,7 @@ export default function LogPage() {
     loadEntries();
   }, [loadEntries]);
 
-  const handleCreate = async (data: { content: string; entry_type?: string; tags?: string[]; source?: string }) => {
+  const handleCreate = async (data: { content: string; entry_type?: string; tags?: string[]; source?: string; priority?: string | null }) => {
     await entryService.create(data);
     loadEntries();
   };

@@ -1,4 +1,4 @@
-import { Entry, DaySummary, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating } from '../types';
+import { Entry, EntryWithResolution, DaySummary, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority } from '../types';
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`/api${path}`, {
@@ -21,14 +21,20 @@ export const entryService = {
     return request<Entry[]>('GET', `/entries${qs}`);
   },
   get: (id: string) => request<Entry>('GET', `/entries/${id}`),
-  create: (data: { content: string; tags?: string[]; entry_type?: string; source?: string; links?: unknown[] }) =>
+  create: (data: { content: string; tags?: string[]; entry_type?: string; source?: string; links?: unknown[]; priority?: string | null }) =>
     request<Entry>('POST', '/entries', data),
-  update: (id: string, data: { content: string; tags?: string[]; entry_type?: string; source?: string; links?: unknown[] }) =>
+  update: (id: string, data: { content: string; tags?: string[]; entry_type?: string; source?: string; links?: unknown[]; status?: string | null; priority?: string | null }) =>
     request<Entry>('PUT', `/entries/${id}`, data),
   delete: (id: string) => request<{ success: boolean }>('DELETE', `/entries/${id}`),
   promote: (id: string, cards: { card_type?: string; front: string; back: string }[]) =>
     request<ReviewCard[]>('POST', `/entries/${id}/promote`, { cards }),
   demote: (id: string) => request<{ success: boolean }>('DELETE', `/entries/${id}/demote`),
+  updatePriority: (id: string, priority: NonNullable<EntryPriority>) =>
+    request<Entry>('PATCH', `/entries/${id}/priority`, { priority }),
+  resolve: (id: string, data: { content: string; tags?: string[]; entry_type?: string; source?: string }) =>
+    request<{ entry: Entry; resolution_entry: Entry }>('POST', `/entries/${id}/resolve`, data),
+  reopen: (id: string) => request<Entry>('POST', `/entries/${id}/reopen`),
+  getWithResolution: (id: string) => request<EntryWithResolution>('GET', `/entries/${id}`),
 };
 
 export const daySummaryService = {
@@ -69,6 +75,14 @@ export const statsService = {
     const qs = params.toString() ? `?${params}` : '';
     return request<ReviewHistoryEntry[]>('GET', `/stats/review-history${qs}`);
   },
+};
+
+export const openService = {
+  list: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<Entry[]>('GET', `/open${qs}`);
+  },
+  stats: () => request<OpenStats>('GET', '/open/stats'),
 };
 
 export const tagService = {
