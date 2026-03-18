@@ -1,4 +1,4 @@
-import { Entry, EntryWithResolution, DaySummary, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority } from '../types';
+import { Entry, EntryWithResolution, DaySummary, SummaryItem, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority } from '../types';
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`/api${path}`, {
@@ -39,7 +39,20 @@ export const entryService = {
 
 export const daySummaryService = {
   get: (dateCst: string) => request<DaySummary>('GET', `/day-summaries/${dateCst}`),
-  save: (dateCst: string, content: string) => request<DaySummary>('PUT', `/day-summaries/${dateCst}`, { content }),
+  save: (dateCst: string, data: { goals?: string | null; progress?: string | null; open_questions?: string | null }) =>
+    request<DaySummary>('PUT', `/day-summaries/${dateCst}`, data),
+};
+
+export const summaryItemService = {
+  list: (dateCst: string) => request<SummaryItem[]>('GET', `/day-summaries/${dateCst}/items`),
+  create: (dateCst: string, data: { title: string; content?: string; tag?: string }) =>
+    request<SummaryItem>('POST', `/day-summaries/${dateCst}/items`, data),
+  update: (dateCst: string, id: string, data: { title?: string; content?: string | null; tag?: string | null }) =>
+    request<SummaryItem>('PUT', `/day-summaries/${dateCst}/items/${id}`, data),
+  delete: (dateCst: string, id: string) =>
+    request<{ success: boolean }>('DELETE', `/day-summaries/${dateCst}/items/${id}`),
+  reorder: (dateCst: string, ids: string[]) =>
+    request<SummaryItem[]>('PATCH', `/day-summaries/${dateCst}/items/reorder`, { ids }),
 };
 
 export const reviewService = {

@@ -30,10 +30,24 @@ export interface Entry {
   updated_at: string;
 }
 
+export interface SummaryItem {
+  id: string;
+  date_cst: string;
+  title: string;
+  content?: string | null;
+  tag?: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DaySummary {
   date_cst: string;
-  content: string;
-  updated_at: string;
+  goals: string | null;
+  progress: string | null;
+  open_questions: string | null;
+  updated_at: string | null;
+  items: SummaryItem[];
 }
 
 export interface ReviewCard {

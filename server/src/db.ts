@@ -30,7 +30,20 @@ export function initializeDatabase(): void {
 
     CREATE TABLE IF NOT EXISTS day_summaries (
       date_cst TEXT PRIMARY KEY,
-      content TEXT NOT NULL,
+      goals TEXT,
+      progress TEXT,
+      open_questions TEXT,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS summary_items (
+      id TEXT PRIMARY KEY,
+      date_cst TEXT NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT,
+      tag TEXT,
+      position INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
 
@@ -92,7 +105,26 @@ export function initializeDatabase(): void {
     CREATE INDEX IF NOT EXISTS idx_review_cards_state ON review_cards(state);
     CREATE INDEX IF NOT EXISTS idx_review_log_card_id ON review_log(card_id);
     CREATE INDEX IF NOT EXISTS idx_review_log_reviewed_at ON review_log(reviewed_at);
+    CREATE INDEX IF NOT EXISTS idx_summary_items_date_cst ON summary_items(date_cst);
+    CREATE INDEX IF NOT EXISTS idx_summary_items_date_position ON summary_items(date_cst, position);
   `);
+
+  // Migration: day_summaries — migrate from old single-content schema to structured template
+  try {
+    const hasGoals = db.prepare("SELECT goals FROM day_summaries LIMIT 0").columns();
+    // If goals column exists, schema is already migrated — do nothing
+    void hasGoals;
+  } catch (_) {
+    // goals column doesn't exist — old schema with 'content' column
+    try {
+      db.exec("ALTER TABLE day_summaries ADD COLUMN goals TEXT");
+      db.exec("ALTER TABLE day_summaries ADD COLUMN progress TEXT");
+      db.exec("ALTER TABLE day_summaries ADD COLUMN open_questions TEXT");
+      // Migrate existing content into goals
+      db.exec("UPDATE day_summaries SET goals = content");
+      // Note: can't drop the content column in SQLite < 3.35, but it's harmless to leave it
+    } catch (_) { /* columns may already exist */ }
+  }
 
   // Migration: add status and priority columns to entries (for existing databases)
   try { db.exec("ALTER TABLE entries ADD COLUMN status TEXT DEFAULT NULL"); } catch (_) { /* column already exists */ }
