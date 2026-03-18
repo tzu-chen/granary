@@ -158,7 +158,25 @@ interface EntryLink {
 
 ### Daily Log View
 
-The primary view. Shows entries grouped by calendar date (CST, UTC-6 fixed offset — same convention as Scribe's reading time tracking). Each day has an optional **day summary** field at the top (a short free-text note: today's goals, what happened, open questions). The log is scrollable and infinite — load more days as you scroll up.
+The primary view. Shows entries grouped by calendar date (CST, UTC-6 fixed offset — same convention as Scribe's reading time tracking). Each day has an optional **day summary** at the top composed of two layers:
+
+1. **Structured template** — three fixed sections (Goals, Progress, Open questions), each nullable and collapsible. Provides consistent daily structure without being mandatory.
+2. **Summary items** — an ordered list of additional topic blocks, each with a title, optional body (Markdown+LaTeX), and optional tag. Used to separate distinct study sessions or topics within a day.
+
+```typescript
+interface SummaryItem {
+  id: string;                          // UUID
+  date_cst: string;                    // YYYY-MM-DD in CST
+  title: string;                       // Short label, e.g. "Brezis Ch.5"
+  content?: string;                    // Markdown+LaTeX body, nullable
+  tag?: string;                        // Optional tag linking this block to related entries
+  position: number;                    // Ordering within the day
+  created_at: string;
+  updated_at: string;
+}
+```
+
+The log is scrollable and infinite — load more days as you scroll up.
 
 ### Review Session View
 
@@ -211,6 +229,17 @@ CREATE TABLE IF NOT EXISTS day_summaries (
   goals TEXT,                               -- Markdown+LaTeX, nullable (section hidden if NULL)
   progress TEXT,                            -- Markdown+LaTeX, nullable
   open_questions TEXT,                      -- Markdown+LaTeX, nullable (informal quick notes, distinct from tracked open entries)
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS summary_items (
+  id TEXT PRIMARY KEY,
+  date_cst TEXT NOT NULL,                   -- YYYY-MM-DD in CST
+  title TEXT NOT NULL,                      -- Short label, e.g. "Brezis Ch.5", "arXiv reading"
+  content TEXT,                             -- Markdown+LaTeX body, nullable (title-only items are valid)
+  tag TEXT,                                 -- Optional single tag linking this block to a group of entries
+  position INTEGER NOT NULL DEFAULT 0,      -- Ordering within the day
+  created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 
@@ -267,6 +296,8 @@ CREATE TABLE IF NOT EXISTS settings (
 - `review_cards.state` — for stats
 - `review_log.card_id` — for per-card history
 - `review_log.reviewed_at` — for stats over time
+- `summary_items.date_cst` — for fetching items by day
+- `summary_items.(date_cst, position)` — for ordered retrieval
 
 **JSON columns:** `tags` and `links` are stored as JSON TEXT. Parse with `JSON.parse()` in route handlers, serialize with `JSON.stringify()` on write. Same pattern as Navigate's `authors`/`categories` and Scribe's `tags`.
 
@@ -341,10 +372,22 @@ These endpoints serve the WorkbenchPage's Open tab. They are convenience wrapper
 
 ### Day Summaries
 
+The day summary has two layers: a **structured template** (goals/progress/open questions — one row per day) and **summary items** (additional topic blocks — multiple per day). Both are optional and independent.
+
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/day-summaries/:date_cst` | Get summary for a date. Returns `{ date_cst, goals, progress, open_questions, updated_at }`. Missing sections are `null`. |
-| PUT | `/api/day-summaries/:date_cst` | Upsert summary. Body: `{ goals?, progress?, open_questions? }`. Each field is independently nullable — omitted or null fields are set to NULL (section hidden). Only updates the fields provided; unmentioned fields are left unchanged on an existing row. |
+| GET | `/api/day-summaries/:date_cst` | Get summary for a date. Returns `{ date_cst, goals, progress, open_questions, updated_at, items: SummaryItem[] }`. Template sections are `null` when empty. Items array may be empty. |
+| PUT | `/api/day-summaries/:date_cst` | Upsert template fields. Body: `{ goals?, progress?, open_questions? }`. Each field is independently nullable — omitted or null fields are set to NULL (section hidden). Only updates the fields provided; unmentioned fields are left unchanged on an existing row. |
+
+### Summary Items
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/day-summaries/:date_cst/items` | List summary items for a date, ordered by `position`. |
+| POST | `/api/day-summaries/:date_cst/items` | Create a summary item. Body: `{ title, content?, tag? }`. Auto-assigns `position` as max+1 for that date. |
+| PUT | `/api/day-summaries/:date_cst/items/:id` | Update a summary item. Body: `{ title?, content?, tag? }`. |
+| DELETE | `/api/day-summaries/:date_cst/items/:id` | Delete a summary item. |
+| PATCH | `/api/day-summaries/:date_cst/items/reorder` | Reorder items. Body: `{ ids: string[] }` — array of item IDs in desired order. Updates `position` for each. |
 
 ### Review Cards
 
@@ -418,12 +461,19 @@ Use the **FSRS-5** algorithm (Free Spaced Repetition Scheduler). This is a ~50-l
 
 The main view. Layout:
 - **Date header** with navigation arrows (← yesterday, today, tomorrow →) and a date picker
-- **Day summary template** at top with three collapsible sections, each independently editable with 1500ms debounce auto-save (same pattern as Scribe's `useAutoSave`):
-  - **Goals** — what you plan to work on (prospective)
-  - **Progress** — what you actually did (retrospective, or updated through the day)
-  - **Open questions** — informal quick notes on unresolved things (distinct from tracked `status='open'` entries — these are lightweight, don't enter the open items system)
-  - Each section is hidden (collapsed with no content shown) when its value is `null`. Clicking a section header expands it and creates an editable area. If the user clears all text and leaves, it saves as `null` and collapses again.
-  - On days with no summary at all, show a minimal "Add summary" button that expands the template.
+- **Day summary** area at top, composed of two layers:
+  1. **Structured template** — three collapsible sections, each independently editable with 1500ms debounce auto-save (same pattern as Scribe's `useAutoSave`):
+     - **Goals** — what you plan to work on (prospective)
+     - **Progress** — what you actually did (retrospective, or updated through the day)
+     - **Open questions** — informal quick notes on unresolved things (distinct from tracked `status='open'` entries — these are lightweight, don't enter the open items system)
+     - Each section is hidden (collapsed with no content shown) when its value is `null`. Clicking a section header expands it and creates an editable area. If the user clears all text and leaves, it saves as `null` and collapses again.
+     - On days with no template and no summary items, show a minimal "Add summary" button that expands the template.
+  2. **Summary items** — an ordered list of additional topic blocks below the template. Each item has a short title (e.g., "Brezis Ch.5", "rough volatility reading"), an optional Markdown+LaTeX body, and an optional tag. Use cases:
+     - Separating different study sessions within one day ("morning: measure theory", "afternoon: arXiv papers")
+     - Adding narrative context that doesn't fit the Goals/Progress/Open questions structure
+     - Linking a summary block to a group of entries via its tag
+     - Items are collapsible (title always visible, body toggles). Drag-to-reorder. Each item auto-saves independently with 1500ms debounce.
+     - "Add item" button at the bottom of the summary items list. New items get a title field (required) and an expandable body.
 - **Entry list** for the selected date, newest first
 - **New entry form** at bottom: content textarea (Markdown+LaTeX), entry_type selector, tags input, source input, optional links. When `entry_type` is `question` or `exercise`, show a priority selector (defaults to medium).
 - Entries are editable inline (click to expand editor) or via the detail page
