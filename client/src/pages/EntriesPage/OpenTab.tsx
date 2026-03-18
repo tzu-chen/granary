@@ -5,7 +5,7 @@ import { entryService, openService } from '../../services/api';
 import MarkdownLatex from '../../components/MarkdownLatex/MarkdownLatex';
 import PriorityBadge from '../../components/PriorityBadge/PriorityBadge';
 import ResolveForm from '../../components/ResolveForm/ResolveForm';
-import styles from './OpenItemsPage.module.css';
+import styles from './OpenTab.module.css';
 
 const TYPE_COLORS: Record<string, string> = {
   definition: 'var(--color-entry-definition)',
@@ -37,7 +37,11 @@ function getCSTDate(dateStr: string): string {
 
 const CYCLE_ORDER: NonNullable<EntryPriority>[] = ['high', 'medium', 'low'];
 
-export default function OpenItemsPage() {
+interface Props {
+  onCountsChange: () => void;
+}
+
+export default function OpenTab({ onCountsChange }: Props) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [stats, setStats] = useState<OpenStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,16 +81,13 @@ export default function OpenItemsPage() {
     const idx = CYCLE_ORDER.indexOf(currentPriority);
     const next = CYCLE_ORDER[(idx + 1) % CYCLE_ORDER.length];
 
-    // Optimistic update
     setEntries(prev => prev.map(e => e.id === id ? { ...e, priority: next } : e));
 
     try {
       await entryService.updatePriority(id, next);
-      // Refresh stats
       const statsData = await openService.stats();
       setStats(statsData);
     } catch {
-      // Revert on failure
       setEntries(prev => prev.map(e => e.id === id ? { ...e, priority: currentPriority } : e));
     }
   };
@@ -96,6 +97,7 @@ export default function OpenItemsPage() {
       await entryService.resolve(id, data);
       setResolvingId(null);
       loadData();
+      onCountsChange();
     } catch (err) {
       console.error('Failed to resolve entry:', err);
     }
@@ -105,38 +107,21 @@ export default function OpenItemsPage() {
     try {
       await entryService.reopen(id);
       loadData();
+      onCountsChange();
     } catch (err) {
       console.error('Failed to reopen entry:', err);
     }
   };
 
   if (loading) {
-    return <div className={styles.page}><div className={styles.loading}>Loading open items...</div></div>;
+    return <div className={styles.loading}>Loading open items...</div>;
   }
 
   const openEntries = entries.filter(e => e.status === 'open');
   const resolvedEntries = entries.filter(e => e.status === 'resolved');
 
   return (
-    <div className={styles.page}>
-      {/* Summary Bar */}
-      {stats && (
-        <div className={styles.summaryBar}>
-          <span className={styles.totalCount}>{stats.total} open</span>
-          <div className={styles.priorityCounts}>
-            {PRIORITY_OPTIONS.map(p => {
-              const count = stats.by_priority.find(bp => bp.priority === p.value)?.count || 0;
-              if (count === 0) return null;
-              return (
-                <span key={p.value} className={styles.priorityPill} style={{ background: `var(--color-priority-${p.value})` }}>
-                  {count} {p.label.toLowerCase()}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
+    <div className={styles.openTab}>
       {/* Filters */}
       <div className={styles.filters}>
         <select
