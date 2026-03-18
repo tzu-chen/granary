@@ -68,6 +68,15 @@ export function initializeDatabase(): void {
       FOREIGN KEY (card_id) REFERENCES review_cards(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS resolutions (
+      id TEXT PRIMARY KEY,
+      entry_id TEXT NOT NULL,
+      resolution_entry_id TEXT NOT NULL,
+      resolved_at TEXT NOT NULL,
+      FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE,
+      FOREIGN KEY (resolution_entry_id) REFERENCES entries(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -76,12 +85,20 @@ export function initializeDatabase(): void {
     CREATE INDEX IF NOT EXISTS idx_entries_created_at ON entries(created_at);
     CREATE INDEX IF NOT EXISTS idx_entries_entry_type ON entries(entry_type);
     CREATE INDEX IF NOT EXISTS idx_entries_is_reviewable ON entries(is_reviewable);
+    CREATE INDEX IF NOT EXISTS idx_entries_status ON entries(status);
+    CREATE INDEX IF NOT EXISTS idx_entries_priority ON entries(priority);
+    CREATE INDEX IF NOT EXISTS idx_resolutions_entry_id ON resolutions(entry_id);
+    CREATE INDEX IF NOT EXISTS idx_resolutions_resolution_entry_id ON resolutions(resolution_entry_id);
     CREATE INDEX IF NOT EXISTS idx_review_cards_entry_id ON review_cards(entry_id);
     CREATE INDEX IF NOT EXISTS idx_review_cards_due_date ON review_cards(due_date);
     CREATE INDEX IF NOT EXISTS idx_review_cards_state ON review_cards(state);
     CREATE INDEX IF NOT EXISTS idx_review_log_card_id ON review_log(card_id);
     CREATE INDEX IF NOT EXISTS idx_review_log_reviewed_at ON review_log(reviewed_at);
   `);
+
+  // Migration: add status and priority columns to entries (for existing databases)
+  try { db.exec("ALTER TABLE entries ADD COLUMN status TEXT DEFAULT NULL"); } catch (_) { /* column already exists */ }
+  try { db.exec("ALTER TABLE entries ADD COLUMN priority TEXT DEFAULT NULL"); } catch (_) { /* column already exists */ }
 
   // Insert default FSRS-5 parameters if not present
   const existing = db.prepare('SELECT key FROM settings WHERE key = ?').get('fsrs_parameters');

@@ -19,9 +19,9 @@ export default function EntryEditPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleSubmit = async (data: { content: string; entry_type?: string; tags?: string[]; source?: string }) => {
+  const handleSubmit = async (data: { content: string; entry_type?: string; tags?: string[]; source?: string; priority?: string | null }) => {
     if (!id) return;
-    await entryService.update(id, data);
+    await entryService.update(id, { ...data, status: entry?.status, priority: data.priority });
     navigate(`/entries/${id}`);
   };
 
@@ -44,6 +44,7 @@ export default function EntryEditPage() {
           entry_type: entry.entry_type as EntryType,
           tags: entry.tags,
           source: entry.source || '',
+          priority: entry.priority,
         }}
         onSubmit={handleSubmit}
         submitLabel="Save Changes"

@@ -4,6 +4,15 @@ import { getCSTDate } from '../services/fsrs';
 
 const router = Router();
 
+function parseEntry(row: Record<string, unknown>) {
+  return {
+    ...row,
+    tags: JSON.parse(row.tags as string),
+    links: JSON.parse(row.links as string),
+    is_reviewable: Boolean(row.is_reviewable),
+  };
+}
+
 router.get('/', (req: Request, res: Response) => {
   try {
     let query = 'SELECT * FROM entries';
@@ -38,6 +47,10 @@ router.get('/', (req: Request, res: Response) => {
       conditions.push("is_reviewable = ?");
       params.push(req.query.is_reviewable === 'true' ? 1 : 0);
     }
+    if (req.query.status) {
+      conditions.push("status = ?");
+      params.push(req.query.status);
+    }
     if (req.query.search) {
       conditions.push("content LIKE ?");
       params.push(`%${req.query.search}%`);
@@ -49,12 +62,7 @@ router.get('/', (req: Request, res: Response) => {
     query += ' ORDER BY created_at DESC';
 
     const rows = db.prepare(query).all(...params) as Record<string, unknown>[];
-    const entries = rows.map(row => ({
-      ...row,
-      tags: JSON.parse(row.tags as string),
-      links: JSON.parse(row.links as string),
-      is_reviewable: Boolean(row.is_reviewable),
-    }));
+    const entries = rows.map(parseEntry);
     res.json(entries);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch entries' });
@@ -65,11 +73,31 @@ router.get('/:id', (req: Request, res: Response) => {
   try {
     const row = db.prepare('SELECT * FROM entries WHERE id = ?').get(req.params.id) as Record<string, unknown> | undefined;
     if (!row) return res.status(404).json({ error: 'Entry not found' });
+
+    const entry = parseEntry(row);
+
+    // Check if this entry has been resolved
+    const resolution = db.prepare(`
+      SELECT r.id, r.resolution_entry_id, r.resolved_at,
+             e.content as resolution_content, e.entry_type as resolution_entry_type,
+             e.tags as resolution_tags, e.created_at as resolution_created_at
+      FROM resolutions r
+      JOIN entries e ON r.resolution_entry_id = e.id
+      WHERE r.entry_id = ?
+    `).get(req.params.id) as Record<string, unknown> | undefined;
+
+    // Check if this entry IS a resolution for another entry
+    const resolutionOf = db.prepare(`
+      SELECT entry_id as resolved_entry_id FROM resolutions WHERE resolution_entry_id = ?
+    `).get(req.params.id) as Record<string, unknown> | undefined;
+
     res.json({
-      ...row,
-      tags: JSON.parse(row.tags as string),
-      links: JSON.parse(row.links as string),
-      is_reviewable: Boolean(row.is_reviewable),
+      ...entry,
+      resolution: resolution ? {
+        ...resolution,
+        resolution_tags: JSON.parse(resolution.resolution_tags as string),
+      } : undefined,
+      resolution_of: resolutionOf || undefined,
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch entry' });
@@ -83,28 +111,34 @@ router.post('/', (req: Request, res: Response) => {
 
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
+    const type = entry_type || 'note';
+
+    // Auto-set status/priority for question and exercise types
+    let status = req.body.status ?? null;
+    let priority = req.body.priority ?? null;
+    if ((type === 'question' || type === 'exercise') && status === null) {
+      status = 'open';
+      priority = priority ?? 'medium';
+    }
 
     db.prepare(`
-      INSERT INTO entries (id, content, tags, entry_type, source, links, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO entries (id, content, tags, entry_type, source, links, status, priority, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id,
       content,
       JSON.stringify(tags || []),
-      entry_type || 'note',
+      type,
       source || null,
       JSON.stringify(links || []),
+      status,
+      priority,
       now,
       now
     );
 
     const entry = db.prepare('SELECT * FROM entries WHERE id = ?').get(id) as Record<string, unknown>;
-    res.status(201).json({
-      ...entry,
-      tags: JSON.parse(entry.tags as string),
-      links: JSON.parse(entry.links as string),
-      is_reviewable: Boolean(entry.is_reviewable),
-    });
+    res.status(201).json(parseEntry(entry));
   } catch (error) {
     res.status(500).json({ error: 'Failed to create entry' });
   }
@@ -115,11 +149,12 @@ router.put('/:id', (req: Request, res: Response) => {
     const existing = db.prepare('SELECT id FROM entries WHERE id = ?').get(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Entry not found' });
 
-    const { content, tags, entry_type, source, links } = req.body;
+    const { content, tags, entry_type, source, links, status, priority } = req.body;
     const now = new Date().toISOString();
 
     db.prepare(`
-      UPDATE entries SET content = ?, tags = ?, entry_type = ?, source = ?, links = ?, updated_at = ?
+      UPDATE entries SET content = ?, tags = ?, entry_type = ?, source = ?, links = ?,
+        status = ?, priority = ?, updated_at = ?
       WHERE id = ?
     `).run(
       content,
@@ -127,17 +162,14 @@ router.put('/:id', (req: Request, res: Response) => {
       entry_type || 'note',
       source || null,
       JSON.stringify(links || []),
+      status ?? null,
+      priority ?? null,
       now,
       req.params.id
     );
 
     const entry = db.prepare('SELECT * FROM entries WHERE id = ?').get(req.params.id) as Record<string, unknown>;
-    res.json({
-      ...entry,
-      tags: JSON.parse(entry.tags as string),
-      links: JSON.parse(entry.links as string),
-      is_reviewable: Boolean(entry.is_reviewable),
-    });
+    res.json(parseEntry(entry));
   } catch (error) {
     res.status(500).json({ error: 'Failed to update entry' });
   }
@@ -198,6 +230,100 @@ router.delete('/:id/demote', (req: Request, res: Response) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to demote entry' });
+  }
+});
+
+router.patch('/:id/priority', (req: Request, res: Response) => {
+  try {
+    const entry = db.prepare('SELECT id, status FROM entries WHERE id = ?').get(req.params.id) as Record<string, unknown> | undefined;
+    if (!entry) return res.status(404).json({ error: 'Entry not found' });
+
+    const { priority } = req.body;
+    if (!['high', 'medium', 'low'].includes(priority)) {
+      return res.status(400).json({ error: 'Priority must be high, medium, or low' });
+    }
+
+    const now = new Date().toISOString();
+    db.prepare('UPDATE entries SET priority = ?, updated_at = ? WHERE id = ?').run(priority, now, req.params.id);
+
+    const updated = db.prepare('SELECT * FROM entries WHERE id = ?').get(req.params.id) as Record<string, unknown>;
+    res.json(parseEntry(updated));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update priority' });
+  }
+});
+
+router.post('/:id/resolve', (req: Request, res: Response) => {
+  try {
+    const entry = db.prepare('SELECT * FROM entries WHERE id = ?').get(req.params.id) as Record<string, unknown> | undefined;
+    if (!entry) return res.status(404).json({ error: 'Entry not found' });
+    if (entry.status !== 'open') return res.status(400).json({ error: 'Entry is not open' });
+
+    const { content, tags, entry_type, source } = req.body;
+    if (!content) return res.status(400).json({ error: 'Resolution content is required' });
+
+    const now = new Date().toISOString();
+    const resolutionEntryId = crypto.randomUUID();
+    const resolutionId = crypto.randomUUID();
+
+    const resolve = db.transaction(() => {
+      // Create the resolution entry
+      db.prepare(`
+        INSERT INTO entries (id, content, tags, entry_type, source, links, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        resolutionEntryId,
+        content,
+        JSON.stringify(tags || JSON.parse(entry.tags as string)),
+        entry_type || 'note',
+        source || entry.source || null,
+        JSON.stringify([]),
+        now,
+        now
+      );
+
+      // Create resolution record
+      db.prepare(`
+        INSERT INTO resolutions (id, entry_id, resolution_entry_id, resolved_at)
+        VALUES (?, ?, ?, ?)
+      `).run(resolutionId, req.params.id, resolutionEntryId, now);
+
+      // Mark original entry as resolved
+      db.prepare('UPDATE entries SET status = ?, updated_at = ? WHERE id = ?').run('resolved', now, req.params.id);
+    });
+
+    resolve();
+
+    const updatedEntry = db.prepare('SELECT * FROM entries WHERE id = ?').get(req.params.id) as Record<string, unknown>;
+    const resolutionEntry = db.prepare('SELECT * FROM entries WHERE id = ?').get(resolutionEntryId) as Record<string, unknown>;
+
+    res.status(201).json({
+      entry: parseEntry(updatedEntry),
+      resolution_entry: parseEntry(resolutionEntry),
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to resolve entry' });
+  }
+});
+
+router.post('/:id/reopen', (req: Request, res: Response) => {
+  try {
+    const entry = db.prepare('SELECT * FROM entries WHERE id = ?').get(req.params.id) as Record<string, unknown> | undefined;
+    if (!entry) return res.status(404).json({ error: 'Entry not found' });
+    if (entry.status !== 'resolved') return res.status(400).json({ error: 'Entry is not resolved' });
+
+    const now = new Date().toISOString();
+
+    // Remove resolution record (keep the resolution entry in the log)
+    db.prepare('DELETE FROM resolutions WHERE entry_id = ?').run(req.params.id);
+
+    // Reopen the entry
+    db.prepare('UPDATE entries SET status = ?, updated_at = ? WHERE id = ?').run('open', now, req.params.id);
+
+    const updated = db.prepare('SELECT * FROM entries WHERE id = ?').get(req.params.id) as Record<string, unknown>;
+    res.json(parseEntry(updated));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to reopen entry' });
   }
 });
 

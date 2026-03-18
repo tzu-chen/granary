@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import { EntryType, ENTRY_TYPES } from '../../types';
+import { useState, useEffect } from 'react';
+import { EntryType, EntryPriority, ENTRY_TYPES, PRIORITY_OPTIONS } from '../../types';
 import TagInput from '../TagInput/TagInput';
 import styles from './EntryForm.module.css';
 
-interface EntryFormData {
+export interface EntryFormData {
   content: string;
   entry_type: EntryType;
   tags: string[];
   source: string;
+  priority?: EntryPriority;
 }
 
 interface Props {
@@ -21,15 +22,27 @@ export default function EntryForm({ initial, onSubmit, submitLabel = 'Add Entry'
   const [entryType, setEntryType] = useState<EntryType>(initial?.entry_type || 'note');
   const [tags, setTags] = useState<string[]>(initial?.tags || []);
   const [source, setSource] = useState(initial?.source || '');
+  const [priority, setPriority] = useState<EntryPriority>(initial?.priority ?? null);
+
+  const showPriority = entryType === 'question' || entryType === 'exercise';
+
+  useEffect(() => {
+    if (showPriority && priority === null) {
+      setPriority('medium');
+    } else if (!showPriority) {
+      setPriority(null);
+    }
+  }, [entryType]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
-    onSubmit({ content, entry_type: entryType, tags, source });
+    onSubmit({ content, entry_type: entryType, tags, source, priority: showPriority ? priority : null });
     if (!initial) {
       setContent('');
       setTags([]);
       setSource('');
+      setPriority(null);
     }
   };
 
@@ -52,6 +65,17 @@ export default function EntryForm({ initial, onSubmit, submitLabel = 'Add Entry'
             <option key={t.value} value={t.value}>{t.label}</option>
           ))}
         </select>
+        {showPriority && (
+          <select
+            className={styles.select}
+            value={priority || 'medium'}
+            onChange={e => setPriority(e.target.value as NonNullable<EntryPriority>)}
+          >
+            {PRIORITY_OPTIONS.map(p => (
+              <option key={p.value} value={p.value}>{p.label} Priority</option>
+            ))}
+          </select>
+        )}
         <input
           className={styles.input}
           type="text"

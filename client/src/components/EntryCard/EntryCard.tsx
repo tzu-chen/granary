@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Entry, ENTRY_TYPES } from '../../types';
 import MarkdownLatex from '../MarkdownLatex/MarkdownLatex';
+import PriorityBadge from '../PriorityBadge/PriorityBadge';
 import styles from './EntryCard.module.css';
 
 interface Props {
@@ -29,6 +30,9 @@ export default function EntryCard({ entry, onPromote }: Props) {
     <div className={styles.card} style={{ borderLeftColor: accentColor }}>
       <div className={styles.header}>
         <span className={styles.badge} style={{ background: accentColor }}>{typeLabel}</span>
+        {entry.status === 'open' && entry.priority && (
+          <PriorityBadge priority={entry.priority} />
+        )}
         <span className={styles.time}>{time}</span>
         <div className={styles.actions}>
           <Link to={`/entries/${entry.id}`} className={styles.link}>View</Link>

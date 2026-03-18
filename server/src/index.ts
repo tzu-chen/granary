@@ -8,6 +8,7 @@ import reviewRouter from './routes/review';
 import statsRouter from './routes/stats';
 import tagsRouter from './routes/tags';
 import settingsRouter from './routes/settings';
+import openRouter from './routes/open';
 import healthRouter from './routes/health';
 
 const app = express();
@@ -21,6 +22,7 @@ app.use('/api/day-summaries', daySummariesRouter);
 app.use('/api/review', reviewRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/tags', tagsRouter);
+app.use('/api/open', openRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/health', healthRouter);
 
