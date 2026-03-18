@@ -81,6 +81,8 @@ interface Entry {
   source?: string;                     // Free text: "Brezis Ch.4", "arXiv:2301.12345", etc.
   links: EntryLink[];                  // Cross-app references (see below)
   is_reviewable: boolean;              // Whether this entry has been promoted to SRS
+  status: 'open' | 'resolved' | null; // Tracking status for actionable entries (see below)
+  priority: 'high' | 'medium' | 'low' | null; // Priority for open items
   created_at: string;                  // ISO 8601
   updated_at: string;                  // ISO 8601
 }
@@ -93,6 +95,23 @@ interface Entry {
 - `exercise` — tracks solved/unsolved status
 - `insight` / `note` — plain entries, the default journal mode
 - `question` — an open question to revisit later
+
+### Open / Resolved Tracking
+
+Entries with `entry_type` of `question` or `exercise` default to `status = 'open'` and `priority = 'medium'` on creation. All other entry types default to `status = NULL, priority = NULL` (not trackable), though any entry can be manually set to open if desired.
+
+When resolving an entry, a **resolution note** is created — this is a new entry with `entry_type = 'note'` (or any appropriate type) that links back to the original via a `resolution_of` field. This creates a pair: the original question and the entry that answers it.
+
+```typescript
+interface Resolution {
+  id: string;                          // UUID
+  entry_id: string;                    // FK → the resolved entry
+  resolution_entry_id: string;         // FK → the new entry containing the resolution
+  resolved_at: string;                 // ISO 8601
+}
+```
+
+Resolving an entry: (1) creates the resolution entry, (2) inserts a row in `resolutions`, (3) sets `status = 'resolved'` on the original entry. The resolution entry appears in the daily log on the day it was written, and is also displayed inline beneath the original entry on the Open Items page and entry detail view.
 
 ### Review Cards
 
@@ -165,8 +184,26 @@ CREATE TABLE IF NOT EXISTS entries (
   source TEXT,
   links TEXT NOT NULL DEFAULT '[]',         -- JSON array of EntryLink objects
   is_reviewable INTEGER NOT NULL DEFAULT 0,
+  status TEXT DEFAULT NULL
+    CHECK (status IN ('open', 'resolved', NULL)),
+  priority TEXT DEFAULT NULL
+    CHECK (priority IN ('high', 'medium', 'low', NULL)),
   created_at TEXT NOT NULL,                 -- ISO 8601
   updated_at TEXT NOT NULL                  -- ISO 8601
+);
+
+-- Auto-default: entry creation logic should set status='open', priority='medium'
+-- when entry_type is 'question' or 'exercise', unless explicitly overridden.
+-- This is handled in the route handler, not as a SQL default, because the default
+-- depends on entry_type which SQL DEFAULT cannot express.
+
+CREATE TABLE IF NOT EXISTS resolutions (
+  id TEXT PRIMARY KEY,
+  entry_id TEXT NOT NULL,                   -- The original open entry being resolved
+  resolution_entry_id TEXT NOT NULL,        -- The new entry containing the resolution
+  resolved_at TEXT NOT NULL,                -- ISO 8601
+  FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE,
+  FOREIGN KEY (resolution_entry_id) REFERENCES entries(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS day_summaries (
@@ -219,6 +256,10 @@ CREATE TABLE IF NOT EXISTS settings (
 - `entries.created_at` — for date-range log queries
 - `entries.entry_type` — for filtering
 - `entries.is_reviewable` — for card management views
+- `entries.status` — for open items queries
+- `entries.priority` — for sorting open items
+- `resolutions.entry_id` — FK lookup (find resolution for an entry)
+- `resolutions.resolution_entry_id` — FK lookup (find what entry resolves)
 - `review_cards.entry_id` — FK lookup
 - `review_cards.due_date` — for fetching due cards
 - `review_cards.state` — for stats
@@ -237,13 +278,23 @@ All under `/api` prefix. RESTful verbs. Parameterized SQL only — no string int
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/entries` | List entries. Query params: `date_cst` (single day), `start`/`end` (range), `tag`, `entry_type`, `source`, `is_reviewable`, `search` (full-text on content). Returns newest first. |
-| GET | `/api/entries/:id` | Get single entry |
-| POST | `/api/entries` | Create entry |
+| GET | `/api/entries` | List entries. Query params: `date_cst` (single day), `start`/`end` (range), `tag`, `entry_type`, `source`, `is_reviewable`, `status`, `search` (full-text on content). Returns newest first. |
+| GET | `/api/entries/:id` | Get single entry. Includes resolution (if resolved) and resolution_of (if this entry is a resolution for another). |
+| POST | `/api/entries` | Create entry. Auto-sets `status='open', priority='medium'` when `entry_type` is `question` or `exercise`, unless explicitly provided. |
 | PUT | `/api/entries/:id` | Update entry |
-| DELETE | `/api/entries/:id` | Delete entry (cascades to review_cards → review_log) |
+| DELETE | `/api/entries/:id` | Delete entry (cascades to review_cards → review_log, resolutions) |
 | POST | `/api/entries/:id/promote` | Create review card(s) for entry, set `is_reviewable = 1`. Body: `{ cards: [{ card_type, front, back }] }` |
 | DELETE | `/api/entries/:id/demote` | Remove all review cards for entry, set `is_reviewable = 0` |
+| PATCH | `/api/entries/:id/priority` | Update priority. Body: `{ priority: 'high'|'medium'|'low' }` |
+| POST | `/api/entries/:id/resolve` | Resolve an open entry. Body: `{ content, tags?, entry_type?, source? }`. Creates a new resolution entry, inserts a `resolutions` row, sets original entry `status='resolved'`. Returns both the updated original and the new resolution entry. |
+| POST | `/api/entries/:id/reopen` | Reopen a resolved entry. Deletes the resolution row (but keeps the resolution entry in the log). Sets `status='open'`. |
+
+### Open Items
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/open` | List all open entries (`status='open'`). Returns entries sorted by priority (high→medium→low), then by `created_at` ascending (oldest first — longest-standing questions surface to top). Each entry includes its tags, source, and age in days. |
+| GET | `/api/open/stats` | Counts: total open, by priority, by entry_type, by tag. |
 
 ### Day Summaries
 
@@ -315,6 +366,7 @@ Use the **FSRS-5** algorithm (Free Spaced Repetition Scheduler). This is a ~50-l
 | Path | Component | Description |
 |------|-----------|-------------|
 | `/` | `LogPage` | Daily research log (default view) |
+| `/open` | `OpenItemsPage` | Open questions, exercises, and other unresolved entries |
 | `/review` | `ReviewPage` | Spaced repetition review session |
 | `/dashboard` | `DashboardPage` | Stats, heatmap, forecast |
 | `/entries/:id` | `EntryDetailPage` | Single entry view with its review cards |
@@ -326,9 +378,26 @@ The main view. Layout:
 - **Date header** with navigation arrows (← yesterday, today, tomorrow →) and a date picker
 - **Day summary** block at top (editable inline, auto-saves with 1500ms debounce — same pattern as Scribe's `useAutoSave`)
 - **Entry list** for the selected date, newest first
-- **New entry form** at bottom: content textarea (Markdown+LaTeX), entry_type selector, tags input, source input, optional links
+- **New entry form** at bottom: content textarea (Markdown+LaTeX), entry_type selector, tags input, source input, optional links. When `entry_type` is `question` or `exercise`, show a priority selector (defaults to medium).
 - Entries are editable inline (click to expand editor) or via the detail page
 - Each entry shows a "Promote to review" button if not yet reviewable, or a badge showing card count + next due date if already reviewable
+- Open entries (`status = 'open'`) show a colored dot/badge indicating priority (red=high, yellow=medium, blue=low)
+
+### OpenItemsPage (/open)
+
+A dedicated view for all unresolved entries across all dates. Layout:
+- **Summary bar** at top: total open count, breakdown by priority (high/medium/low)
+- **Filter controls**: filter by entry_type (question, exercise, or all), by tag, by source, by priority
+- **Entry list** sorted by priority (high first), then by age (oldest first). Each entry shows:
+  - Priority badge (colored dot or pill: high=red, medium=yellow, low=blue) — clickable to change priority inline
+  - Entry type icon/label
+  - Content preview (first ~2 lines, rendered with KaTeX)
+  - Source and tags
+  - Age ("opened 14 days ago")
+  - Date created (links to that day in LogPage)
+- **Resolve action**: button on each entry opens a resolution form — a content textarea (Markdown+LaTeX) pre-filled with empty text, entry_type selector (defaults to `note`), tags inherited from original. On submit, calls `POST /api/entries/:id/resolve`.
+- **Resolved entries** can be toggled visible via a "Show resolved" toggle. Resolved entries show the resolution note inline beneath them, with the resolution date.
+- **Reopen action**: on resolved entries, a button to call `POST /api/entries/:id/reopen`.
 
 ### ReviewPage (/review)
 
@@ -341,16 +410,20 @@ The main view. Layout:
 
 ### DashboardPage (/dashboard)
 
-- **Due today** count (prominent)
+- **Due today** count (prominent) + **Open items** count
 - **Heatmap** of entries created per day (last 6 months, same style as Scribe's reading time heatmap)
 - **Forecast chart** — bar chart of cards coming due per day (next 30 days), using Recharts
 - **Retention chart** — line chart of % correct (rated Good or Easy) over time
+- **Open items by age** — how long items have been open (histogram or list of oldest)
 - **Tag breakdown** — entries per tag
 - **Source breakdown** — entries per source
 
 ### EntryDetailPage (/entries/:id)
 
 - Full entry display with rendered Markdown+LaTeX
+- If entry has `status = 'open'`: priority badge, resolve button, reopen button (if resolved)
+- If entry is resolved: resolution note displayed inline beneath, with resolution date and link to the resolution entry
+- If this entry *is* a resolution: link to the original entry it resolved
 - List of associated review cards with their SRS state, due date, review count
 - Button to add another card from this entry
 - Review history for each card (mini-timeline of past ratings)
