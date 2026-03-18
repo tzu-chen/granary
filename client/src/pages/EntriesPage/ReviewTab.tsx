@@ -2,9 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { DueCard, ReviewRating } from '../../types';
 import { reviewService } from '../../services/api';
 import ReviewCardDisplay from '../../components/ReviewCardDisplay/ReviewCardDisplay';
-import styles from './ReviewPage.module.css';
+import styles from './EntriesPage.module.css';
 
-export default function ReviewPage() {
+interface Props {
+  onCountsChange: () => void;
+}
+
+export default function ReviewTab({ onCountsChange }: Props) {
   const [cards, setCards] = useState<DueCard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -33,6 +37,7 @@ export default function ReviewPage() {
       startTime.current = Date.now();
     } else {
       setSessionDone(true);
+      onCountsChange();
     }
   };
 
@@ -55,9 +60,9 @@ export default function ReviewPage() {
 
     return (
       <div className={styles.center}>
-        <div className={styles.summary}>
+        <div className={styles.sessionSummary}>
           <h2>Session Complete</h2>
-          <div className={styles.stats}>
+          <div className={styles.sessionStats}>
             <div className={styles.stat}>
               <span className={styles.statValue}>{reviewed}</span>
               <span className={styles.statLabel}>Cards Reviewed</span>
@@ -73,7 +78,7 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={styles.reviewContent}>
       <div className={styles.progress}>
         Card {currentIndex + 1} of {cards.length}
       </div>
