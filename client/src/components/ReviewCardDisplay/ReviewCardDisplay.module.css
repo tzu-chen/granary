@@ -1,0 +1,67 @@
+.card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.front, .back {
+  padding: 1rem 0;
+}
+
+.back {
+  border-top: 1px dashed var(--color-border);
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+}
+
+.label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+
+.revealBtn {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background var(--transition);
+}
+
+.revealBtn:hover {
+  background: var(--color-accent-hover);
+}
+
+.ratings {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
+.ratingBtn {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  border: 2px solid;
+  border-radius: var(--radius-md);
+  background: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background var(--transition), color var(--transition);
+}
+
+.ratingBtn:hover {
+  background: var(--color-bg-tertiary);
+}

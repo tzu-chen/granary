@@ -1,0 +1,109 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.loading, .empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.formSection {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.formTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.promoteModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.promoteContent {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 550px;
+  box-shadow: var(--shadow-md);
+}
+
+.promoteContent h3 {
+  margin-bottom: 1rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.3rem;
+  margin-top: 0.6rem;
+}
+
+.promoteTextarea {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85rem;
+  resize: vertical;
+}
+
+.promoteTextarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.promoteActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.cancelBtn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-secondary);
+}
+
+.submitBtn {
+  padding: 0.5rem 1.25rem;
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.submitBtn:hover {
+  background: var(--color-accent-hover);
+}

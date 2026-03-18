@@ -1,0 +1,26 @@
+.container {
+  margin-bottom: 1rem;
+}
+
+.textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  resize: vertical;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.textarea:focus {
+  outline: none;
+  border-style: solid;
+  border-color: var(--color-accent);
+}
+
+.textarea::placeholder {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
