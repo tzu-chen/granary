@@ -85,8 +85,6 @@ export function initializeDatabase(): void {
     CREATE INDEX IF NOT EXISTS idx_entries_created_at ON entries(created_at);
     CREATE INDEX IF NOT EXISTS idx_entries_entry_type ON entries(entry_type);
     CREATE INDEX IF NOT EXISTS idx_entries_is_reviewable ON entries(is_reviewable);
-    CREATE INDEX IF NOT EXISTS idx_entries_status ON entries(status);
-    CREATE INDEX IF NOT EXISTS idx_entries_priority ON entries(priority);
     CREATE INDEX IF NOT EXISTS idx_resolutions_entry_id ON resolutions(entry_id);
     CREATE INDEX IF NOT EXISTS idx_resolutions_resolution_entry_id ON resolutions(resolution_entry_id);
     CREATE INDEX IF NOT EXISTS idx_review_cards_entry_id ON review_cards(entry_id);
@@ -99,6 +97,10 @@ export function initializeDatabase(): void {
   // Migration: add status and priority columns to entries (for existing databases)
   try { db.exec("ALTER TABLE entries ADD COLUMN status TEXT DEFAULT NULL"); } catch (_) { /* column already exists */ }
   try { db.exec("ALTER TABLE entries ADD COLUMN priority TEXT DEFAULT NULL"); } catch (_) { /* column already exists */ }
+
+  // Create indices on status/priority after the columns are guaranteed to exist
+  db.exec("CREATE INDEX IF NOT EXISTS idx_entries_status ON entries(status)");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_entries_priority ON entries(priority)");
 
   // Insert default FSRS-5 parameters if not present
   const existing = db.prepare('SELECT key FROM settings WHERE key = ?').get('fsrs_parameters');
