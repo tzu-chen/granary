@@ -1,4 +1,4 @@
-export type EntryType = 'insight' | 'definition' | 'theorem' | 'proof_sketch' | 'example' | 'counterexample' | 'exercise' | 'question' | 'note';
+export type EntryType = 'insight' | 'definition' | 'theorem' | 'proof_sketch' | 'example' | 'counterexample' | 'exercise' | 'question' | 'note' | 'reference';
 
 export type CardType = 'prompt_response' | 'cloze' | 'state_theorem' | 'proof_idea';
 
@@ -159,4 +159,5 @@ export const ENTRY_TYPES: { value: EntryType; label: string }[] = [
   { value: 'counterexample', label: 'Counterexample' },
   { value: 'exercise', label: 'Exercise' },
   { value: 'question', label: 'Question' },
+  { value: 'reference', label: 'Reference' },
 ];

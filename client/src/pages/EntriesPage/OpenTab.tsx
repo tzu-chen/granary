@@ -17,6 +17,7 @@ const TYPE_COLORS: Record<string, string> = {
   insight: 'var(--color-entry-insight)',
   example: 'var(--color-entry-example)',
   note: 'var(--color-entry-note)',
+  reference: 'var(--color-entry-reference)',
 };
 
 function getAge(dateStr: string): string {
