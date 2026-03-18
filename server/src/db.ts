@@ -20,7 +20,7 @@ export function initializeDatabase(): void {
       content TEXT NOT NULL,
       tags TEXT NOT NULL DEFAULT '[]',
       entry_type TEXT NOT NULL DEFAULT 'note'
-        CHECK (entry_type IN ('insight', 'definition', 'theorem', 'proof_sketch', 'example', 'counterexample', 'exercise', 'question', 'note')),
+        CHECK (entry_type IN ('insight', 'definition', 'theorem', 'proof_sketch', 'example', 'counterexample', 'exercise', 'question', 'note', 'reference')),
       source TEXT,
       links TEXT NOT NULL DEFAULT '[]',
       is_reviewable INTEGER NOT NULL DEFAULT 0,
