@@ -208,7 +208,9 @@ CREATE TABLE IF NOT EXISTS resolutions (
 
 CREATE TABLE IF NOT EXISTS day_summaries (
   date_cst TEXT PRIMARY KEY,                -- YYYY-MM-DD in CST
-  content TEXT NOT NULL,
+  goals TEXT,                               -- Markdown+LaTeX, nullable (section hidden if NULL)
+  progress TEXT,                            -- Markdown+LaTeX, nullable
+  open_questions TEXT,                      -- Markdown+LaTeX, nullable (informal quick notes, distinct from tracked open entries)
   updated_at TEXT NOT NULL
 );
 
@@ -268,6 +270,43 @@ CREATE TABLE IF NOT EXISTS settings (
 
 **JSON columns:** `tags` and `links` are stored as JSON TEXT. Parse with `JSON.parse()` in route handlers, serialize with `JSON.stringify()` on write. Same pattern as Navigate's `authors`/`categories` and Scribe's `tags`.
 
+### Full-Text Search (FTS5)
+
+SQLite FTS5 virtual table for fast, ranked search across entry content. Created in `db.ts` alongside the main schema:
+
+```sql
+CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(
+  content,
+  source,
+  tags,
+  content='entries',
+  content_rowid='rowid'
+);
+```
+
+**Keeping FTS in sync:** Use SQLite triggers to automatically update the FTS index when entries are inserted, updated, or deleted. Add these in `db.ts`:
+
+```sql
+CREATE TRIGGER IF NOT EXISTS entries_ai AFTER INSERT ON entries BEGIN
+  INSERT INTO entries_fts(rowid, content, source, tags)
+  VALUES (NEW.rowid, NEW.content, NEW.source, NEW.tags);
+END;
+
+CREATE TRIGGER IF NOT EXISTS entries_ad AFTER DELETE ON entries BEGIN
+  INSERT INTO entries_fts(entries_fts, rowid, content, source, tags)
+  VALUES ('delete', OLD.rowid, OLD.content, OLD.source, OLD.tags);
+END;
+
+CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN
+  INSERT INTO entries_fts(entries_fts, rowid, content, source, tags)
+  VALUES ('delete', OLD.rowid, OLD.content, OLD.source, OLD.tags);
+  INSERT INTO entries_fts(rowid, content, source, tags)
+  VALUES (NEW.rowid, NEW.content, NEW.source, NEW.tags);
+END;
+```
+
+**Querying:** Use `entries_fts MATCH ?` with `bm25()` for ranking. Join back to the `entries` table for full row data. The search route should accept a query string and return results ordered by relevance. FTS5 handles tokenization and stemming automatically. Note: LaTeX commands (e.g., `\int`, `\mathbb{R}`) will be tokenized as words — this is fine; users will search for concept names, not raw LaTeX.
+
 ---
 
 ## API Endpoints
@@ -278,7 +317,7 @@ All under `/api` prefix. RESTful verbs. Parameterized SQL only — no string int
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/entries` | List entries. Query params: `date_cst` (single day), `start`/`end` (range), `tag`, `entry_type`, `source`, `is_reviewable`, `status`, `search` (full-text on content). Returns newest first. |
+| GET | `/api/entries` | List entries. Query params: `date_cst` (single day), `start`/`end` (range), `tag`, `entry_type`, `source`, `is_reviewable`, `status`, `search` (full-text via FTS5 — ranked by BM25 relevance when present; returns newest-first when absent). All filters combinable. |
 | GET | `/api/entries/:id` | Get single entry. Includes resolution (if resolved) and resolution_of (if this entry is a resolution for another). |
 | POST | `/api/entries` | Create entry. Auto-sets `status='open', priority='medium'` when `entry_type` is `question` or `exercise`, unless explicitly provided. |
 | PUT | `/api/entries/:id` | Update entry |
@@ -291,6 +330,10 @@ All under `/api` prefix. RESTful verbs. Parameterized SQL only — no string int
 
 ### Open Items
 
+### Open Items
+
+These endpoints serve the WorkbenchPage's Open tab. They are convenience wrappers — the same data is accessible via `GET /api/entries?status=open`, but these provide the specific sort order and aggregate stats needed by the UI.
+
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/open` | List all open entries (`status='open'`). Returns entries sorted by priority (high→medium→low), then by `created_at` ascending (oldest first — longest-standing questions surface to top). Each entry includes its tags, source, and age in days. |
@@ -300,8 +343,8 @@ All under `/api` prefix. RESTful verbs. Parameterized SQL only — no string int
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/day-summaries/:date_cst` | Get summary for a date |
-| PUT | `/api/day-summaries/:date_cst` | Upsert summary for a date |
+| GET | `/api/day-summaries/:date_cst` | Get summary for a date. Returns `{ date_cst, goals, progress, open_questions, updated_at }`. Missing sections are `null`. |
+| PUT | `/api/day-summaries/:date_cst` | Upsert summary. Body: `{ goals?, progress?, open_questions? }`. Each field is independently nullable — omitted or null fields are set to NULL (section hidden). Only updates the fields provided; unmentioned fields are left unchanged on an existing row. |
 
 ### Review Cards
 
@@ -366,8 +409,7 @@ Use the **FSRS-5** algorithm (Free Spaced Repetition Scheduler). This is a ~50-l
 | Path | Component | Description |
 |------|-----------|-------------|
 | `/` | `LogPage` | Daily research log (default view) |
-| `/open` | `OpenItemsPage` | Open questions, exercises, and other unresolved entries |
-| `/review` | `ReviewPage` | Spaced repetition review session |
+| `/workbench` | `WorkbenchPage` | Tabbed action center: review, open items, search |
 | `/dashboard` | `DashboardPage` | Stats, heatmap, forecast |
 | `/entries/:id` | `EntryDetailPage` | Single entry view with its review cards |
 | `/entries/:id/edit` | `EntryEditPage` | Edit an entry |
@@ -376,17 +418,34 @@ Use the **FSRS-5** algorithm (Free Spaced Repetition Scheduler). This is a ~50-l
 
 The main view. Layout:
 - **Date header** with navigation arrows (← yesterday, today, tomorrow →) and a date picker
-- **Day summary** block at top (editable inline, auto-saves with 1500ms debounce — same pattern as Scribe's `useAutoSave`)
+- **Day summary template** at top with three collapsible sections, each independently editable with 1500ms debounce auto-save (same pattern as Scribe's `useAutoSave`):
+  - **Goals** — what you plan to work on (prospective)
+  - **Progress** — what you actually did (retrospective, or updated through the day)
+  - **Open questions** — informal quick notes on unresolved things (distinct from tracked `status='open'` entries — these are lightweight, don't enter the open items system)
+  - Each section is hidden (collapsed with no content shown) when its value is `null`. Clicking a section header expands it and creates an editable area. If the user clears all text and leaves, it saves as `null` and collapses again.
+  - On days with no summary at all, show a minimal "Add summary" button that expands the template.
 - **Entry list** for the selected date, newest first
 - **New entry form** at bottom: content textarea (Markdown+LaTeX), entry_type selector, tags input, source input, optional links. When `entry_type` is `question` or `exercise`, show a priority selector (defaults to medium).
 - Entries are editable inline (click to expand editor) or via the detail page
 - Each entry shows a "Promote to review" button if not yet reviewable, or a badge showing card count + next due date if already reviewable
 - Open entries (`status = 'open'`) show a colored dot/badge indicating priority (red=high, yellow=medium, blue=low)
 
-### OpenItemsPage (/open)
+### WorkbenchPage (/workbench)
 
-A dedicated view for all unresolved entries across all dates. Layout:
-- **Summary bar** at top: total open count, breakdown by priority (high/medium/low)
+A single page with three tabs, acting as the action center. A **summary bar** is always visible at the top regardless of active tab, showing: cards due count, open items count. Clicking either count switches to the corresponding tab.
+
+#### Tab: Review (default tab)
+
+The spaced repetition drill session.
+- Presents one card at a time: front → (user thinks) → reveal back → rate (Again/Hard/Good/Easy)
+- Cards render Markdown+LaTeX on both sides using KaTeX
+- After rating, immediately shows the next card
+- When done, shows session summary: cards reviewed, average rating, time spent
+- If no cards due, shows a message with next due date
+
+#### Tab: Open
+
+All unresolved entries across all dates.
 - **Filter controls**: filter by entry_type (question, exercise, or all), by tag, by source, by priority
 - **Entry list** sorted by priority (high first), then by age (oldest first). Each entry shows:
   - Priority badge (colored dot or pill: high=red, medium=yellow, low=blue) — clickable to change priority inline
@@ -399,18 +458,22 @@ A dedicated view for all unresolved entries across all dates. Layout:
 - **Resolved entries** can be toggled visible via a "Show resolved" toggle. Resolved entries show the resolution note inline beneath them, with the resolution date.
 - **Reopen action**: on resolved entries, a button to call `POST /api/entries/:id/reopen`.
 
-### ReviewPage (/review)
+#### Tab: Search
 
-- Shows count of due cards at top
-- Presents one card at a time: front → (user thinks) → reveal back → rate (Again/Hard/Good/Easy)
-- Cards render Markdown+LaTeX on both sides using KaTeX
-- After rating, immediately shows the next card
-- When done, shows session summary: cards reviewed, average rating, time spent
-- If no cards due, shows a message with next due date
+Full-text search and browse across all entries.
+- **Search bar** at top with full-text search (backed by SQLite FTS5 — see Search Implementation below)
+- **Filter controls** below search: by tag, source, entry_type, date range, status (open/resolved/any), is_reviewable
+- **Results list** showing matching entries ranked by relevance, each with:
+  - Content preview with search terms highlighted (KaTeX-rendered)
+  - Entry type, source, tags, date
+  - Status badge (if open/resolved)
+  - Link to entry detail page and to that day's log view
+- When search is empty, shows recent entries (last 30 days) as a browsable list with the same filters
+- Useful for finding "orphaned" entries — not reviewable, not open, not linked — which are most likely to get lost
 
 ### DashboardPage (/dashboard)
 
-- **Due today** count (prominent) + **Open items** count
+- **Due today** count (prominent) + **Open items** count (both link to WorkbenchPage tabs)
 - **Heatmap** of entries created per day (last 6 months, same style as Scribe's reading time heatmap)
 - **Forecast chart** — bar chart of cards coming due per day (next 30 days), using Recharts
 - **Retention chart** — line chart of % correct (rated Good or Easy) over time
