@@ -113,12 +113,14 @@ router.post('/', (req: Request, res: Response) => {
     const now = new Date().toISOString();
     const type = entry_type || 'note';
 
-    // Auto-set status/priority for question and exercise types
+    // Auto-set status for question and exercise types, priority only for question
     let status = req.body.status ?? null;
     let priority = req.body.priority ?? null;
     if ((type === 'question' || type === 'exercise') && status === null) {
       status = 'open';
-      priority = priority ?? 'medium';
+    }
+    if (type === 'question' && priority === null) {
+      priority = 'medium';
     }
 
     db.prepare(`
