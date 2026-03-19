@@ -122,9 +122,28 @@ export function initializeDatabase(): void {
       db.exec("ALTER TABLE day_summaries ADD COLUMN open_questions TEXT");
       // Migrate existing content into goals
       db.exec("UPDATE day_summaries SET goals = content");
-      // Note: can't drop the content column in SQLite < 3.35, but it's harmless to leave it
     } catch (_) { /* columns may already exist */ }
   }
+
+  // Migration: remove old 'content' column from day_summaries (it was NOT NULL,
+  // which breaks INSERTs that only specify goals/progress/open_questions)
+  try {
+    db.prepare("SELECT content FROM day_summaries LIMIT 0").columns();
+    // content column still exists — recreate table without it
+    db.exec(`
+      CREATE TABLE day_summaries_new (
+        date_cst TEXT PRIMARY KEY,
+        goals TEXT,
+        progress TEXT,
+        open_questions TEXT,
+        updated_at TEXT NOT NULL
+      );
+      INSERT INTO day_summaries_new (date_cst, goals, progress, open_questions, updated_at)
+        SELECT date_cst, goals, progress, open_questions, updated_at FROM day_summaries;
+      DROP TABLE day_summaries;
+      ALTER TABLE day_summaries_new RENAME TO day_summaries;
+    `);
+  } catch (_) { /* content column doesn't exist — already clean */ }
 
   // Migration: add status and priority columns to entries (for existing databases)
   try { db.exec("ALTER TABLE entries ADD COLUMN status TEXT DEFAULT NULL"); } catch (_) { /* column already exists */ }
