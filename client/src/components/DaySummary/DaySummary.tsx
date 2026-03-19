@@ -38,8 +38,6 @@ export default function DaySummary({ dateCst }: Props) {
   const itemTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const fieldState: Record<TemplateField, string | null> = { goals, progress, open_questions: openQuestions };
-  const fieldStateRef = useRef<Record<TemplateField, string | null>>({ goals: null, progress: null, open_questions: null });
-  fieldStateRef.current = { goals, progress, open_questions: openQuestions };
   const fieldSetters: Record<TemplateField, (v: string | null) => void> = {
     goals: setGoals,
     progress: setProgress,
@@ -90,7 +88,6 @@ export default function DaySummary({ dateCst }: Props) {
   const handleTemplateChange = (field: TemplateField, value: string) => {
     const finalValue = value || null;
     fieldSetters[field](finalValue);
-    fieldStateRef.current[field] = finalValue;
     if (templateTimers.current[field]) clearTimeout(templateTimers.current[field]);
     templateTimers.current[field] = setTimeout(() => saveTemplateField(field, finalValue), 1500);
   };
@@ -114,14 +111,8 @@ export default function DaySummary({ dateCst }: Props) {
   };
 
   const handleSectionBlur = (key: TemplateField) => {
-    const currentValue = fieldStateRef.current[key];
-    // Flush any pending debounce timer
-    if (templateTimers.current[key]) {
-      clearTimeout(templateTimers.current[key]);
-      delete templateTimers.current[key];
-    }
-    if (!currentValue?.trim()) {
-      // Empty — save null and collapse
+    // If empty, save null and collapse
+    if (!fieldState[key]?.trim()) {
       fieldSetters[key](null);
       saveTemplateField(key, null);
       setExpandedSections(prev => {
@@ -129,9 +120,6 @@ export default function DaySummary({ dateCst }: Props) {
         next.delete(key);
         return next;
       });
-    } else {
-      // Save immediately on blur instead of waiting for debounce
-      saveTemplateField(key, currentValue);
     }
     setEditingSection(null);
   };
