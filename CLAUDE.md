@@ -98,7 +98,7 @@ interface Entry {
 
 ### Open / Resolved Tracking
 
-Entries with `entry_type` of `question` or `exercise` default to `status = 'open'` and `priority = 'medium'` on creation. All other entry types default to `status = NULL, priority = NULL` (not trackable), though any entry can be manually set to open if desired.
+Entries with `entry_type` of `question` or `exercise` default to `status = 'open'` on creation. Question entries also default to `priority = 'medium'`; exercise entries do not get a priority. All other entry types default to `status = NULL, priority = NULL` (not trackable), though any entry can be manually set to open if desired.
 
 When resolving an entry, a **resolution note** is created — this is a new entry with `entry_type = 'note'` (or any appropriate type) that links back to the original via a `resolution_of` field. This creates a pair: the original question and the entry that answers it.
 
@@ -210,8 +210,8 @@ CREATE TABLE IF NOT EXISTS entries (
   updated_at TEXT NOT NULL                  -- ISO 8601
 );
 
--- Auto-default: entry creation logic should set status='open', priority='medium'
--- when entry_type is 'question' or 'exercise', unless explicitly overridden.
+-- Auto-default: entry creation logic should set status='open' when entry_type is
+-- 'question' or 'exercise'. Priority='medium' is only auto-set for 'question', not 'exercise'.
 -- This is handled in the route handler, not as a SQL default, because the default
 -- depends on entry_type which SQL DEFAULT cannot express.
 
@@ -350,7 +350,7 @@ All under `/api` prefix. RESTful verbs. Parameterized SQL only — no string int
 |--------|------|-------------|
 | GET | `/api/entries` | List entries. Query params: `date_cst` (single day), `start`/`end` (range), `tag`, `entry_type`, `source`, `is_reviewable`, `status`, `search` (full-text via FTS5 — ranked by BM25 relevance when present; returns newest-first when absent). All filters combinable. |
 | GET | `/api/entries/:id` | Get single entry. Includes resolution (if resolved) and resolution_of (if this entry is a resolution for another). |
-| POST | `/api/entries` | Create entry. Auto-sets `status='open', priority='medium'` when `entry_type` is `question` or `exercise`, unless explicitly provided. |
+| POST | `/api/entries` | Create entry. Auto-sets `status='open'` when `entry_type` is `question` or `exercise`. Auto-sets `priority='medium'` only for `question` entries, unless explicitly provided. |
 | PUT | `/api/entries/:id` | Update entry |
 | DELETE | `/api/entries/:id` | Delete entry (cascades to review_cards → review_log, resolutions) |
 | POST | `/api/entries/:id/promote` | Create review card(s) for entry, set `is_reviewable = 1`. Body: `{ cards: [{ card_type, front, back }] }` |
@@ -475,7 +475,7 @@ The main view. Layout:
      - Items are collapsible (title always visible, body toggles). Drag-to-reorder. Each item auto-saves independently with 1500ms debounce.
      - "Add item" button at the bottom of the summary items list. New items get a title field (required) and an expandable body.
 - **Entry list** for the selected date, newest first
-- **New entry form** at bottom: content textarea (Markdown+LaTeX), entry_type selector, tags input, source input, optional links. When `entry_type` is `question` or `exercise`, show a priority selector (defaults to medium).
+- **New entry form** at bottom: content textarea (Markdown+LaTeX), entry_type selector, tags input, source input, optional links. When `entry_type` is `question`, show a priority selector (defaults to medium).
 - Entries are editable inline (click to expand editor) or via the detail page
 - Each entry shows a "Promote to review" button if not yet reviewable, or a badge showing card count + next due date if already reviewable
 - Open entries (`status = 'open'`) show a colored dot/badge indicating priority (red=high, yellow=medium, blue=low)

@@ -24,7 +24,7 @@ export default function EntryForm({ initial, onSubmit, submitLabel = 'Add Entry'
   const [source, setSource] = useState(initial?.source || '');
   const [priority, setPriority] = useState<EntryPriority>(initial?.priority ?? null);
 
-  const showPriority = entryType === 'question' || entryType === 'exercise';
+  const showPriority = entryType === 'question';
 
   useEffect(() => {
     if (showPriority && priority === null) {
