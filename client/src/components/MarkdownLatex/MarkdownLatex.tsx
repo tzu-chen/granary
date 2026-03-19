@@ -40,6 +40,9 @@ function processContent(content: string): string {
   result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
   result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Hyperlinks [text](url)
+  result = result.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
   result = result.replace(/^### (.+)$/gm, '<h3>$1</h3>');
   result = result.replace(/^## (.+)$/gm, '<h2>$1</h2>');
   result = result.replace(/^# (.+)$/gm, '<h1>$1</h1>');
