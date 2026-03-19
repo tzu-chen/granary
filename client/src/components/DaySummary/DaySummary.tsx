@@ -46,12 +46,6 @@ export default function DaySummary({ dateCst }: Props) {
     open_questions: setOpenQuestions,
   };
 
-  // --- Template section handlers ---
-
-  const saveTemplateField = useCallback((field: TemplateField, value: string | null) => {
-    daySummaryService.save(dateCst, { [field]: value }).catch(() => {});
-  }, [dateCst]);
-
   useEffect(() => {
     setLoaded(false);
     setEditingSection(null);
@@ -85,20 +79,13 @@ export default function DaySummary({ dateCst }: Props) {
       setShowTemplate(false);
       setLoaded(true);
     });
+  }, [dateCst]);
 
-    return () => {
-      // Flush pending debounce saves before switching dates or unmounting
-      const fields: TemplateField[] = ['goals', 'progress', 'open_questions'];
-      for (const field of fields) {
-        if (templateTimers.current[field]) {
-          clearTimeout(templateTimers.current[field]);
-          delete templateTimers.current[field];
-          const value = fieldStateRef.current[field];
-          saveTemplateField(field, value);
-        }
-      }
-    };
-  }, [dateCst, saveTemplateField]);
+  // --- Template section handlers ---
+
+  const saveTemplateField = useCallback((field: TemplateField, value: string | null) => {
+    daySummaryService.save(dateCst, { [field]: value }).catch(() => {});
+  }, [dateCst]);
 
   const handleTemplateChange = (field: TemplateField, value: string) => {
     const finalValue = value || null;
