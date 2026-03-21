@@ -1,4 +1,4 @@
-import { Entry, EntryWithResolution, DaySummary, SummaryItem, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority } from '../types';
+import { Entry, EntryWithResolution, DaySummary, SummaryItem, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority, ScribeBook } from '../types';
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`/api${path}`, {
@@ -100,6 +100,17 @@ export const openService = {
 
 export const tagService = {
   list: () => request<TagCount[]>('GET', '/tags'),
+};
+
+export const scribeService = {
+  searchBooks: (query: string) => {
+    const qs = query ? `?q=${encodeURIComponent(query)}` : '';
+    return request<ScribeBook[]>('GET', `/scribe/books${qs}`);
+  },
+};
+
+export const sourceService = {
+  list: () => request<{ source: string; count: number }[]>('GET', '/sources'),
 };
 
 export const settingsService = {
