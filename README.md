@@ -1,8 +1,6 @@
 # Granary
 
-A research log and spaced repetition system for mathematical self-study. Granary combines a daily research journal with a review card system — log entries capture what you learned and why, and entries can be promoted to reviewable cards for long-term retention via the FSRS-5 algorithm.
-
-Built for studying stochastic analysis, functional analysis, measure theory, and related areas. Content is heavily mathematical with LaTeX throughout, rendered with KaTeX.
+A research log and spaced repetition system for self-study. Granary combines a daily research journal with a review card system — log entries capture what you learned and why, and entries can be promoted to reviewable cards for long-term retention via the FSRS-5 algorithm.
 
 ## Features
 
