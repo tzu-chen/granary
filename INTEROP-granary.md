@@ -2,8 +2,8 @@
 
 Cross-app integration spec for Granary. This documents the endpoints and data shapes that sibling apps (Navigate, Scribe, Monolith) may call or reference.
 
-**Base URL:** `http://localhost:3002/api`  
-**Port:** 3002 (server), 5174 (Vite dev)
+**Base URL:** `http://localhost:3009/api`  
+**Port:** 3009 (server), 5174 (Vite dev)
 
 ---
 
