@@ -14,7 +14,7 @@ import scribeRouter from './routes/scribe';
 import sourcesRouter from './routes/sources';
 
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3009;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
