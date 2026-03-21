@@ -1,6 +1,6 @@
 import { COLOR_SCHEMES, DEFAULT_SCHEME_ID } from '../colorSchemes';
 
-const THEME_KEY = 'forge_theme';
+const THEME_KEY = 'granary_theme';
 
 const LEGACY_MAP: Record<string, string> = {
   light: 'default-light',

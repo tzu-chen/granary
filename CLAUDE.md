@@ -39,7 +39,7 @@ No `.env` files. The only server environment variable is `PORT` (defaults to 300
 Full-stack TypeScript: React 18 + Vite frontend, Express + SQLite backend. Same structure as Navigate and Scribe.
 
 ```
-forge/
+granary/
 ├── package.json              # Root scripts (concurrently for dev, install:all)
 ├── client/                   # React frontend (Vite)
 │   ├── src/
@@ -61,7 +61,7 @@ forge/
     │   ├── routes/           # RESTful route handlers
     │   └── services/         # Business logic (database queries, scheduler, export)
     └── data/                 # Runtime data (gitignored)
-        └── forge.db          # SQLite database
+        └── granary.db        # SQLite database
 ```
 
 ---
@@ -188,7 +188,7 @@ Shows review statistics: cards due today, upcoming forecast (next 7/30 days), re
 
 ---
 
-## Database Schema (`server/data/forge.db`)
+## Database Schema (`server/data/granary.db`)
 
 SQLite database created at runtime. WAL mode, foreign keys enabled.
 
@@ -576,7 +576,7 @@ Same as Scribe:
 
 Two themes: light (default) and dark. Same mechanism as Scribe:
 - Toggle by setting `data-theme="dark"` on `document.documentElement`
-- Persist to localStorage via a `themeStorage` service (key: `forge_theme`)
+- Persist to localStorage via a `themeStorage` service (key: `granary_theme`)
 - Consume through a `ThemeContext`
 - Use CSS custom properties from `global.css` everywhere — never hard-code colors
 
