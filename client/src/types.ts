@@ -143,6 +143,12 @@ export interface OpenStats {
   by_tag: { tag: string; count: number }[];
 }
 
+export interface ScribeBook {
+  id: string;
+  filename: string;
+  subject: string | null;
+}
+
 export const PRIORITY_OPTIONS: { value: 'high' | 'medium' | 'low'; label: string }[] = [
   { value: 'high', label: 'High' },
   { value: 'medium', label: 'Medium' },

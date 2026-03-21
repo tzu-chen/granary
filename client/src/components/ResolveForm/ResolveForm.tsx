@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Entry, EntryType, ENTRY_TYPES } from '../../types';
 import TagInput from '../TagInput/TagInput';
+import SourceInput from '../SourceInput/SourceInput';
 import styles from './ResolveForm.module.css';
 
 interface Props {
@@ -42,13 +43,7 @@ export default function ResolveForm({ entry, onSubmit, onCancel }: Props) {
             <option key={t.value} value={t.value}>{t.label}</option>
           ))}
         </select>
-        <input
-          className={styles.input}
-          type="text"
-          value={source}
-          onChange={e => setSource(e.target.value)}
-          placeholder="Source"
-        />
+        <SourceInput value={source} onChange={setSource} placeholder="Source" />
       </div>
       <TagInput tags={tags} onChange={setTags} />
       <div className={styles.actions}>

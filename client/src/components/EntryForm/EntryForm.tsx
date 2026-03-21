@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { EntryType, EntryPriority, ENTRY_TYPES, PRIORITY_OPTIONS } from '../../types';
 import TagInput from '../TagInput/TagInput';
+import SourceInput from '../SourceInput/SourceInput';
 import styles from './EntryForm.module.css';
 
 export interface EntryFormData {
@@ -76,13 +77,7 @@ export default function EntryForm({ initial, onSubmit, submitLabel = 'Add Entry'
             ))}
           </select>
         )}
-        <input
-          className={styles.input}
-          type="text"
-          value={source}
-          onChange={e => setSource(e.target.value)}
-          placeholder="Source (e.g., Brezis Ch.4)"
-        />
+        <SourceInput value={source} onChange={setSource} placeholder="Source (e.g., Brezis Ch.4)" />
       </div>
       <TagInput tags={tags} onChange={setTags} />
       <button className={styles.submit} type="submit" disabled={!content.trim()}>

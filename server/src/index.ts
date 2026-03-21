@@ -10,6 +10,8 @@ import tagsRouter from './routes/tags';
 import settingsRouter from './routes/settings';
 import openRouter from './routes/open';
 import healthRouter from './routes/health';
+import scribeRouter from './routes/scribe';
+import sourcesRouter from './routes/sources';
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -25,6 +27,8 @@ app.use('/api/tags', tagsRouter);
 app.use('/api/open', openRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/health', healthRouter);
+app.use('/api/scribe/books', scribeRouter);
+app.use('/api/sources', sourcesRouter);
 
 // Serve static frontend in production
 const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
