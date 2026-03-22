@@ -117,6 +117,10 @@ input, textarea, select {
   font-size: inherit;
 }
 
+.katex * {
+  box-sizing: content-box;
+}
+
 .katex-display {
   margin: 0.8em 0;
   overflow-x: auto;
