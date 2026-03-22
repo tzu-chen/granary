@@ -117,18 +117,6 @@ input, textarea, select {
   font-size: inherit;
 }
 
-.katex,
-.katex * {
-  box-sizing: content-box;
-}
-
-.katex *::before,
-.katex *::after {
-  box-sizing: content-box;
-  margin: unset;
-  padding: unset;
-}
-
 .katex-display {
   margin: 0.8em 0;
   overflow-x: auto;
