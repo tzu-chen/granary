@@ -7,46 +7,70 @@ interface Props {
   className?: string;
 }
 
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function renderLatex(tex: string, displayMode: boolean): string {
   try {
     return katex.renderToString(tex, { displayMode, throwOnError: false });
   } catch {
-    return `<code>${tex}</code>`;
+    return `<code>${escapeHtml(tex)}</code>`;
   }
 }
 
 function processContent(content: string): string {
-  // Replace display math $$...$$ first
-  let result = content.replace(/\$\$([\s\S]*?)\$\$/g, (_match, tex) => {
-    return `<div class="katex-display">${renderLatex(tex.trim(), true)}</div>`;
+  const placeholders: Map<string, string> = new Map();
+  let placeholderIndex = 0;
+
+  function ph(html: string): string {
+    const key = `\x00PH${placeholderIndex++}\x00`;
+    placeholders.set(key, html);
+    return key;
+  }
+
+  let result = content;
+
+  // Phase 1: Extract fenced code blocks
+  result = result.replace(/```([\s\S]*?)```/g, (_match, code) => {
+    return ph(`<pre><code>${escapeHtml(code)}</code></pre>`);
   });
 
-  // Replace \[...\] display math
+  // Phase 2: Extract inline code
+  result = result.replace(/`([^`]+)`/g, (_match, code) => {
+    return ph(`<code>${escapeHtml(code)}</code>`);
+  });
+
+  // Phase 3: Extract and render display math
+  result = result.replace(/\$\$([\s\S]*?)\$\$/g, (_match, tex) => {
+    return ph(`<div class="katex-display">${renderLatex(tex.trim(), true)}</div>`);
+  });
   result = result.replace(/\\\[([\s\S]*?)\\\]/g, (_match, tex) => {
-    return `<div class="katex-display">${renderLatex(tex.trim(), true)}</div>`;
+    return ph(`<div class="katex-display">${renderLatex(tex.trim(), true)}</div>`);
   });
 
-  // Replace inline math $...$  (not preceded by \)
+  // Phase 4: Extract and render inline math
   result = result.replace(/(?<![\\$])\$([^\n$]+?)\$(?!\$)/g, (_match, tex) => {
-    return renderLatex(tex.trim(), false);
+    return ph(renderLatex(tex.trim(), false));
   });
-
-  // Replace \(...\) inline math
   result = result.replace(/\\\(([\s\S]*?)\\\)/g, (_match, tex) => {
-    return renderLatex(tex.trim(), false);
+    return ph(renderLatex(tex.trim(), false));
   });
 
-  // Basic markdown: bold, italic, code, headers, line breaks
+  // Phase 5: Markdown formatting (now safe — no KaTeX HTML in the string)
   result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
-  // Hyperlinks [text](url)
   result = result.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
     '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
   result = result.replace(/^### (.+)$/gm, '<h3>$1</h3>');
   result = result.replace(/^## (.+)$/gm, '<h2>$1</h2>');
   result = result.replace(/^# (.+)$/gm, '<h1>$1</h1>');
   result = result.replace(/\n/g, '<br />');
+
+  // Phase 6: Restore placeholders
+  placeholders.forEach((html, key) => {
+    result = result.split(key).join(html);
+  });
 
   return result;
 }
