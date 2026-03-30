@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount } from '../../types';
-import { statsService, tagService, entryService } from '../../services/api';
+import { StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry } from '../../types';
+import { statsService } from '../../services/api';
 import Heatmap from '../../components/Heatmap/Heatmap';
 import ForecastChart from '../../components/ForecastChart/ForecastChart';
 import RetentionChart from '../../components/RetentionChart/RetentionChart';
@@ -11,30 +11,12 @@ export default function DashboardPage() {
   const [heatmapData, setHeatmapData] = useState<HeatmapEntry[]>([]);
   const [forecastData, setForecastData] = useState<ForecastEntry[]>([]);
   const [historyData, setHistoryData] = useState<ReviewHistoryEntry[]>([]);
-  const [tags, setTags] = useState<TagCount[]>([]);
-  const [sources, setSources] = useState<{ source: string; count: number }[]>([]);
 
   useEffect(() => {
     statsService.overview().then(setOverview).catch(() => {});
     statsService.heatmap().then(setHeatmapData).catch(() => {});
     statsService.forecast(30).then(setForecastData).catch(() => {});
     statsService.reviewHistory().then(setHistoryData).catch(() => {});
-    tagService.list().then(setTags).catch(() => {});
-
-    // Get source breakdown
-    entryService.list().then(entries => {
-      const sourceCounts: Record<string, number> = {};
-      for (const e of entries) {
-        if (e.source) {
-          sourceCounts[e.source] = (sourceCounts[e.source] || 0) + 1;
-        }
-      }
-      setSources(
-        Object.entries(sourceCounts)
-          .map(([source, count]) => ({ source, count }))
-          .sort((a, b) => b.count - a.count)
-      );
-    }).catch(() => {});
   }, []);
 
   return (
@@ -70,40 +52,6 @@ export default function DashboardPage() {
         <h2 className={styles.sectionTitle}>Retention Over Time</h2>
         <RetentionChart data={historyData} />
       </section>
-
-      <div className={styles.twoCol}>
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Tags</h2>
-          {tags.length === 0 ? (
-            <p className={styles.empty}>No tags yet</p>
-          ) : (
-            <div className={styles.breakdown}>
-              {tags.map(t => (
-                <div key={t.tag} className={styles.breakdownRow}>
-                  <span>{t.tag}</span>
-                  <span className={styles.breakdownCount}>{t.count}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Sources</h2>
-          {sources.length === 0 ? (
-            <p className={styles.empty}>No sources yet</p>
-          ) : (
-            <div className={styles.breakdown}>
-              {sources.map(s => (
-                <div key={s.source} className={styles.breakdownRow}>
-                  <span>{s.source}</span>
-                  <span className={styles.breakdownCount}>{s.count}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
     </div>
   );
 }

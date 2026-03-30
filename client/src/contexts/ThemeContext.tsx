@@ -7,12 +7,15 @@ interface ThemeContextValue {
   schemeId: string;
   scheme: ColorScheme;
   setScheme: (id: string) => void;
+  fontSize: number;
+  setFontSize: (size: number) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [schemeId, setSchemeId] = useState<string>(() => themeStorage.get());
+  const [fontSize, setFontSizeState] = useState<number>(() => themeStorage.getFontSize());
 
   const scheme = useMemo(() => getSchemeById(schemeId), [schemeId]);
 
@@ -21,12 +24,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     themeStorage.save(id);
   }, []);
 
+  const setFontSize = useCallback((size: number) => {
+    setFontSizeState(size);
+    themeStorage.saveFontSize(size);
+  }, []);
+
   useLayoutEffect(() => {
     applyColorScheme(scheme);
   }, [scheme]);
 
+  useLayoutEffect(() => {
+    document.documentElement.style.fontSize = `${fontSize}px`;
+  }, [fontSize]);
+
   return (
-    <ThemeContext.Provider value={{ schemeId, scheme, setScheme }}>
+    <ThemeContext.Provider value={{ schemeId, scheme, setScheme, fontSize, setFontSize }}>
       {children}
     </ThemeContext.Provider>
   );

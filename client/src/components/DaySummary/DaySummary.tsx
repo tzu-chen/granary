@@ -8,21 +8,18 @@ interface Props {
   dateCst: string;
 }
 
-type TemplateField = 'goals' | 'progress' | 'open_questions';
+type TemplateField = 'goals' | 'progress';
 
 const SECTIONS: { key: TemplateField; label: string; placeholder: string }[] = [
   { key: 'goals', label: 'Goals', placeholder: 'What do you plan to work on today?' },
   { key: 'progress', label: 'Progress', placeholder: 'What did you actually accomplish?' },
-  { key: 'open_questions', label: 'Open questions', placeholder: 'Informal notes on unresolved things...' },
 ];
 
 export default function DaySummary({ dateCst }: Props) {
   const [goals, setGoals] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
-  const [openQuestions, setOpenQuestions] = useState<string | null>(null);
   const [items, setItems] = useState<SummaryItem[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<Set<TemplateField>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [editingSection, setEditingSection] = useState<TemplateField | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -37,13 +34,12 @@ export default function DaySummary({ dateCst }: Props) {
   const templateTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const itemTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  const fieldState: Record<TemplateField, string | null> = { goals, progress, open_questions: openQuestions };
-  const fieldStateRef = useRef<Record<TemplateField, string | null>>({ goals: null, progress: null, open_questions: null });
-  fieldStateRef.current = { goals, progress, open_questions: openQuestions };
+  const fieldState: Record<TemplateField, string | null> = { goals, progress };
+  const fieldStateRef = useRef<Record<TemplateField, string | null>>({ goals: null, progress: null });
+  fieldStateRef.current = { goals, progress };
   const fieldSetters: Record<TemplateField, (v: string | null) => void> = {
     goals: setGoals,
     progress: setProgress,
-    open_questions: setOpenQuestions,
   };
 
   // --- Template section handlers ---
@@ -58,29 +54,19 @@ export default function DaySummary({ dateCst }: Props) {
     setEditingItemId(null);
     setShowAddItem(false);
     setShowTemplate(false);
-    setExpandedSections(new Set());
     setExpandedItems(new Set());
 
     daySummaryService.get(dateCst).then(data => {
       setGoals(data.goals);
       setProgress(data.progress);
-      setOpenQuestions(data.open_questions);
       setItems(data.items || []);
 
-      // Auto-expand sections that have content
-      const expanded = new Set<TemplateField>();
-      if (data.goals) expanded.add('goals');
-      if (data.progress) expanded.add('progress');
-      if (data.open_questions) expanded.add('open_questions');
-      setExpandedSections(expanded);
-
-      const hasAny = data.goals || data.progress || data.open_questions || (data.items && data.items.length > 0);
+      const hasAny = data.goals || data.progress || (data.items && data.items.length > 0);
       setShowTemplate(!!hasAny);
       setLoaded(true);
     }).catch(() => {
       setGoals(null);
       setProgress(null);
-      setOpenQuestions(null);
       setItems([]);
       setShowTemplate(false);
       setLoaded(true);
@@ -88,7 +74,7 @@ export default function DaySummary({ dateCst }: Props) {
 
     return () => {
       // Flush pending debounce saves before switching dates or unmounting
-      const fields: TemplateField[] = ['goals', 'progress', 'open_questions'];
+      const fields: TemplateField[] = ['goals', 'progress'];
       for (const field of fields) {
         if (templateTimers.current[field]) {
           clearTimeout(templateTimers.current[field]);
@@ -108,42 +94,20 @@ export default function DaySummary({ dateCst }: Props) {
     templateTimers.current[field] = setTimeout(() => saveTemplateField(field, finalValue), 1500);
   };
 
-  const toggleSection = (key: TemplateField) => {
-    setExpandedSections(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-        setEditingSection(s => s === key ? null : s);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  };
-
   const startEditingSection = (key: TemplateField) => {
-    setExpandedSections(prev => new Set(prev).add(key));
     setEditingSection(key);
   };
 
   const handleSectionBlur = (key: TemplateField) => {
     const currentValue = fieldStateRef.current[key];
-    // Flush any pending debounce timer
     if (templateTimers.current[key]) {
       clearTimeout(templateTimers.current[key]);
       delete templateTimers.current[key];
     }
     if (!currentValue?.trim()) {
-      // Empty — save null and collapse
       fieldSetters[key](null);
       saveTemplateField(key, null);
-      setExpandedSections(prev => {
-        const next = new Set(prev);
-        next.delete(key);
-        return next;
-      });
     } else {
-      // Save immediately on blur instead of waiting for debounce
       saveTemplateField(key, currentValue);
     }
     setEditingSection(null);
@@ -249,52 +213,41 @@ export default function DaySummary({ dateCst }: Props) {
 
   return (
     <div className={styles.container}>
-      {/* Structured template sections */}
-      <div className={styles.template}>
+      {/* Goals & Progress post-it notes */}
+      <div className={styles.noteGrid}>
         {SECTIONS.map(({ key, label, placeholder }) => {
           const value = fieldState[key];
-          const isExpanded = expandedSections.has(key);
           const isEditing = editingSection === key;
 
           return (
-            <div key={key} className={styles.section}>
-              <div
-                className={styles.sectionHeader}
-                onClick={() => value ? toggleSection(key) : startEditingSection(key)}
-              >
-                <span className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ''}`}>&#9654;</span>
-                <span className={styles.sectionLabel}>{label}</span>
-                {!value && !isEditing && (
-                  <button
-                    className={styles.sectionAddBtn}
-                    onClick={e => { e.stopPropagation(); startEditingSection(key); }}
+            <div key={key} className={styles.note}>
+              <div className={styles.noteLabel}>{label}</div>
+              <div className={styles.noteRuled}>
+                {isEditing ? (
+                  <textarea
+                    className={styles.noteTextarea}
+                    value={value || ''}
+                    onChange={e => handleTemplateChange(key, e.target.value)}
+                    onBlur={() => handleSectionBlur(key)}
+                    placeholder={placeholder}
+                    autoFocus
+                  />
+                ) : value ? (
+                  <div
+                    className={styles.noteContent}
+                    onClick={() => startEditingSection(key)}
                   >
-                    +
-                  </button>
+                    <MarkdownLatex content={value} />
+                  </div>
+                ) : (
+                  <div
+                    className={styles.notePlaceholder}
+                    onClick={() => startEditingSection(key)}
+                  >
+                    {placeholder}
+                  </div>
                 )}
               </div>
-              {isExpanded && (
-                <div className={styles.sectionBody}>
-                  {isEditing ? (
-                    <textarea
-                      className={styles.sectionTextarea}
-                      value={value || ''}
-                      onChange={e => handleTemplateChange(key, e.target.value)}
-                      onBlur={() => handleSectionBlur(key)}
-                      placeholder={placeholder}
-                      rows={2}
-                      autoFocus
-                    />
-                  ) : value ? (
-                    <div
-                      className={styles.sectionContent}
-                      onClick={() => startEditingSection(key)}
-                    >
-                      <MarkdownLatex content={value} />
-                    </div>
-                  ) : null}
-                </div>
-              )}
             </div>
           );
         })}

@@ -77,9 +77,9 @@ export default function EntryForm({ initial, onSubmit, submitLabel = 'Add Entry'
             ))}
           </select>
         )}
-        <SourceInput value={source} onChange={setSource} placeholder="Source (e.g., Brezis Ch.4)" />
+        <SourceInput value={source} onChange={setSource} placeholder="Reference" />
+        <TagInput tags={tags} onChange={setTags} />
       </div>
-      <TagInput tags={tags} onChange={setTags} />
       <button className={styles.submit} type="submit" disabled={!content.trim()}>
         {submitLabel}
       </button>

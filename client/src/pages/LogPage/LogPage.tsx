@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
-import { Entry, HeatmapEntry, TagCount } from '../../types';
-import { entryService, statsService, tagService } from '../../services/api';
+import { Entry, HeatmapEntry } from '../../types';
+import { entryService, statsService } from '../../services/api';
 import DateNavigator from '../../components/DateNavigator/DateNavigator';
 import DaySummary from '../../components/DaySummary/DaySummary';
 import EntryCard from '../../components/EntryCard/EntryCard';
@@ -17,10 +17,28 @@ export default function LogPage() {
   const [promoteFront, setPromoteFront] = useState('');
   const [promoteBack, setPromoteBack] = useState('');
   const [heatmapData, setHeatmapData] = useState<HeatmapEntry[]>([]);
-  const [tags, setTags] = useState<TagCount[]>([]);
-  const [sources, setSources] = useState<{ source: string; count: number }[]>([]);
 
   const dateCst = format(date, 'yyyy-MM-dd');
+
+  const currentStreak = useMemo(() => {
+    const countMap: Record<string, number> = {};
+    for (const d of heatmapData) countMap[d.date] = d.count;
+    const cursor = new Date();
+    // If today has no entries, start checking from yesterday
+    const todayStr = cursor.toISOString().slice(0, 10);
+    if (!countMap[todayStr]) cursor.setDate(cursor.getDate() - 1);
+    let streak = 0;
+    while (true) {
+      const dateStr = cursor.toISOString().slice(0, 10);
+      if ((countMap[dateStr] || 0) > 0) {
+        streak++;
+        cursor.setDate(cursor.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }, [heatmapData]);
 
   const loadEntries = useCallback(() => {
     setLoading(true);
@@ -36,20 +54,6 @@ export default function LogPage() {
 
   useEffect(() => {
     statsService.heatmap().then(setHeatmapData).catch(() => {});
-    tagService.list().then(setTags).catch(() => {});
-    entryService.list().then(allEntries => {
-      const sourceCounts: Record<string, number> = {};
-      for (const e of allEntries) {
-        if (e.source) {
-          sourceCounts[e.source] = (sourceCounts[e.source] || 0) + 1;
-        }
-      }
-      setSources(
-        Object.entries(sourceCounts)
-          .map(([source, count]) => ({ source, count }))
-          .sort((a, b) => b.count - a.count)
-      );
-    }).catch(() => {});
   }, []);
 
   const handleCreate = async (data: { content: string; entry_type?: string; tags?: string[]; source?: string; priority?: string | null }) => {
@@ -101,42 +105,17 @@ export default function LogPage() {
           </div>
 
           <div className={styles.statsSection}>
-            <section className={styles.statBlock}>
-              <h3 className={styles.formTitle}>Entry Activity</h3>
-              <Heatmap data={heatmapData} />
-            </section>
-
-            <div className={styles.breakdownColumns}>
+            <div className={styles.statsRow}>
               <section className={styles.statBlock}>
-                <h3 className={styles.formTitle}>Tags</h3>
-                {tags.length === 0 ? (
-                  <p className={styles.emptyMuted}>No tags yet</p>
-                ) : (
-                  <div className={styles.breakdown}>
-                    {tags.map(t => (
-                      <div key={t.tag} className={styles.breakdownRow}>
-                        <span>{t.tag}</span>
-                        <span className={styles.breakdownCount}>{t.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <h3 className={styles.formTitle}>Entry Activity</h3>
+                <Heatmap data={heatmapData} />
               </section>
-
               <section className={styles.statBlock}>
-                <h3 className={styles.formTitle}>Sources</h3>
-                {sources.length === 0 ? (
-                  <p className={styles.emptyMuted}>No sources yet</p>
-                ) : (
-                  <div className={styles.breakdown}>
-                    {sources.map(s => (
-                      <div key={s.source} className={styles.breakdownRow}>
-                        <span>{s.source}</span>
-                        <span className={styles.breakdownCount}>{s.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <h3 className={styles.formTitle}>Current Streak</h3>
+                <div className={styles.streakValue}>
+                  {currentStreak}
+                  <span className={styles.streakUnit}>{currentStreak === 1 ? 'day' : 'days'}</span>
+                </div>
               </section>
             </div>
           </div>

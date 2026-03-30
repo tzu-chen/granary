@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { COLOR_SCHEMES } from '../../colorSchemes';
+import { MIN_FONT_SIZE, MAX_FONT_SIZE } from '../../services/themeStorage';
 import { CloseIcon, PaletteIcon } from '../Icons/Icons';
 import styles from './ThemeMenu.module.css';
 
 export function ThemeMenu() {
-  const { schemeId, setScheme } = useTheme();
+  const { schemeId, setScheme, fontSize, setFontSize } = useTheme();
   const [open, setOpen] = useState(false);
   const overlayMouseDownRef = useRef(false);
 
@@ -95,6 +96,29 @@ export function ThemeMenu() {
                     <span className={styles.cardType}>{scheme.type}</span>
                   </button>
                 ))}
+              </div>
+
+              <div className={styles.fontSizeSection}>
+                <label className={styles.fontSizeLabel}>Font size</label>
+                <div className={styles.fontSizeControls}>
+                  <button
+                    className={styles.fontSizeBtn}
+                    onClick={() => setFontSize(Math.max(MIN_FONT_SIZE, fontSize - 1))}
+                    disabled={fontSize <= MIN_FONT_SIZE}
+                    aria-label="Decrease font size"
+                  >
+                    A-
+                  </button>
+                  <span className={styles.fontSizeValue}>{fontSize}px</span>
+                  <button
+                    className={styles.fontSizeBtn}
+                    onClick={() => setFontSize(Math.min(MAX_FONT_SIZE, fontSize + 1))}
+                    disabled={fontSize >= MAX_FONT_SIZE}
+                    aria-label="Increase font size"
+                  >
+                    A+
+                  </button>
+                </div>
               </div>
             </div>
           </div>

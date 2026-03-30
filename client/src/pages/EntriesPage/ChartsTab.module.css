@@ -17,3 +17,40 @@
   margin-bottom: 1rem;
   color: var(--color-text-primary);
 }
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.breakdownRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+}
+
+.breakdownRow:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.breakdownCount {
+  font-weight: 600;
+  color: var(--color-accent);
+  font-size: 0.85rem;
+}
