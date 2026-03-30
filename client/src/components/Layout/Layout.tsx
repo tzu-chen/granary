@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { ThemeMenu } from '../ThemeMenu/ThemeMenu';
 import styles from './Layout.module.css';
 
@@ -8,13 +8,16 @@ interface Props {
 }
 
 export default function Layout({ children }: Props) {
+  const location = useLocation();
+  const isEntries = location.pathname.startsWith('/entries');
+
   return (
     <div className={styles.layout}>
       <nav className={styles.nav}>
-        <div className={styles.brand}>Granary</div>
-        <div className={styles.links}>
-          <NavLink to="/" className={({ isActive }) => isActive ? styles.active : ''}>Log</NavLink>
-          <NavLink to="/entries" className={({ isActive }) => isActive ? styles.active : ''}>Entries</NavLink>
+        <div className={styles.toggle}>
+          <div className={styles.slider} data-active={isEntries ? 'entries' : 'log'} />
+          <NavLink to="/" className={styles.toggleOption} data-active={!isEntries}>Log</NavLink>
+          <NavLink to="/entries" className={styles.toggleOption} data-active={isEntries}>Entries</NavLink>
         </div>
         <ThemeMenu />
       </nav>
