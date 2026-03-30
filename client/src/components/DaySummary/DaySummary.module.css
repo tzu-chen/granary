@@ -68,12 +68,12 @@
   background-image: repeating-linear-gradient(
     to bottom,
     transparent,
-    transparent calc(1.5em - 1px),
-    var(--color-border) calc(1.5em - 1px),
-    var(--color-border) 1.5em
+    transparent calc(1.445rem - 1px),
+    var(--color-border) calc(1.445rem - 1px),
+    var(--color-border) 1.445rem
   );
-  background-size: 100% 1.5em;
-  background-position-y: 0.45em;
+  background-size: 100% 1.445rem;
+  background-position-y: 0.45rem;
 }
 
 .noteTextarea {
@@ -85,7 +85,7 @@
   background: transparent;
   color: var(--color-text-primary);
   font-size: 0.85rem;
-  line-height: 1.5em;
+  line-height: 1.7;
   resize: none;
   font-family: inherit;
 }
@@ -103,15 +103,27 @@
   cursor: pointer;
   padding: 0.45rem 0.75rem;
   font-size: 0.85rem;
-  line-height: 1.5em;
+  line-height: 1.7;
   color: var(--color-text-primary);
+}
+
+.noteContent > div {
+  line-height: inherit;
+}
+
+.noteContent p,
+.noteContent ul,
+.noteContent ol,
+.noteContent blockquote,
+.noteContent pre {
+  margin: 0;
 }
 
 .notePlaceholder {
   cursor: pointer;
   padding: 0.45rem 0.75rem;
   font-size: 0.85rem;
-  line-height: 1.5em;
+  line-height: 1.7;
   color: var(--color-text-muted);
   font-style: italic;
 }
