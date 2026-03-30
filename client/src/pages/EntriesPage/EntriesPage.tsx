@@ -4,9 +4,10 @@ import { statsService, openService } from '../../services/api';
 import ReviewTab from './ReviewTab';
 import OpenTab from './OpenTab';
 import SearchTab from './SearchTab';
+import ChartsTab from './ChartsTab';
 import styles from './EntriesPage.module.css';
 
-type Tab = 'review' | 'open' | 'search';
+type Tab = 'review' | 'open' | 'search' | 'charts';
 
 export default function EntriesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -76,6 +77,12 @@ export default function EntriesPage() {
         >
           Search
         </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'charts' ? styles.tabActive : ''}`}
+          onClick={() => setTab('charts')}
+        >
+          Charts
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -83,6 +90,7 @@ export default function EntriesPage() {
         {activeTab === 'review' && <ReviewTab onCountsChange={refreshCounts} />}
         {activeTab === 'open' && <OpenTab onCountsChange={refreshCounts} />}
         {activeTab === 'search' && <SearchTab />}
+        {activeTab === 'charts' && <ChartsTab />}
       </div>
     </div>
   );

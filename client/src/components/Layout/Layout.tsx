@@ -15,7 +15,6 @@ export default function Layout({ children }: Props) {
         <div className={styles.links}>
           <NavLink to="/" className={({ isActive }) => isActive ? styles.active : ''}>Log</NavLink>
           <NavLink to="/entries" className={({ isActive }) => isActive ? styles.active : ''}>Entries</NavLink>
-          <NavLink to="/dashboard" className={({ isActive }) => isActive ? styles.active : ''}>Dashboard</NavLink>
         </div>
         <ThemeMenu />
       </nav>

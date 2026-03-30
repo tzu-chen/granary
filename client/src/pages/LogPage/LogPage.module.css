@@ -4,6 +4,37 @@
   gap: 0.5rem;
 }
 
+.columns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  .columns {
+    flex-direction: row;
+    gap: 0;
+  }
+
+  .leftColumn {
+    flex: 1;
+    min-width: 0;
+    padding-right: 1.5rem;
+    border-right: 1px solid var(--color-border);
+  }
+
+  .rightColumn {
+    flex: 1;
+    min-width: 0;
+    padding-left: 1.5rem;
+    position: sticky;
+    top: 1rem;
+    align-self: flex-start;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+}
+
 .loading, .empty {
   text-align: center;
   padding: 2rem;
@@ -18,7 +49,7 @@
 }
 
 .formSection {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--color-border);
 }
@@ -106,4 +137,57 @@
 
 .submitBtn:hover {
   background: var(--color-accent-hover);
+}
+
+.statsSection {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.statBlock {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.breakdownColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.emptyMuted {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.breakdownRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.breakdownRow:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.breakdownCount {
+  font-weight: 600;
+  color: var(--color-accent);
+  font-size: 0.8rem;
 }
