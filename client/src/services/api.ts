@@ -43,6 +43,13 @@ export const daySummaryService = {
     request<DaySummary>('PUT', `/day-summaries/${dateCst}`, data),
 };
 
+export const periodGoalService = {
+  get: (periodKey: string) =>
+    request<{ period_key: string; goals: string | null; updated_at: string | null }>('GET', `/period-goals/${periodKey}`),
+  save: (periodKey: string, data: { goals: string | null; period_type: 'weekly' | 'monthly' }) =>
+    request<{ period_key: string; goals: string | null; updated_at: string }>('PUT', `/period-goals/${periodKey}`, data),
+};
+
 export const summaryItemService = {
   list: (dateCst: string) => request<SummaryItem[]>('GET', `/day-summaries/${dateCst}/items`),
   create: (dateCst: string, data: { title: string; content?: string; tag?: string }) =>

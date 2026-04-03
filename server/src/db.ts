@@ -90,6 +90,13 @@ export function initializeDatabase(): void {
       FOREIGN KEY (resolution_entry_id) REFERENCES entries(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS period_goals (
+      period_key TEXT PRIMARY KEY,
+      period_type TEXT NOT NULL CHECK (period_type IN ('weekly', 'monthly')),
+      goals TEXT,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL

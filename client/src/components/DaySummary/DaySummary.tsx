@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { addDays, format, getISOWeek, getISOWeekYear } from 'date-fns';
 import { SummaryItem } from '../../types';
-import { daySummaryService, summaryItemService } from '../../services/api';
+import { daySummaryService, summaryItemService, periodGoalService } from '../../services/api';
 import MarkdownLatex from '../MarkdownLatex/MarkdownLatex';
 import styles from './DaySummary.module.css';
 
@@ -9,11 +10,29 @@ interface Props {
 }
 
 type TemplateField = 'goals' | 'progress';
+type GoalTab = 'daily' | 'weekly' | 'monthly';
 
 const SECTIONS: { key: TemplateField; label: string; placeholder: string }[] = [
   { key: 'goals', label: 'Goals', placeholder: 'What do you plan to work on today?' },
   { key: 'progress', label: 'Progress', placeholder: 'What did you actually accomplish?' },
 ];
+
+function getWeekKey(dateCst: string): string {
+  const d = new Date(dateCst + 'T12:00:00');
+  const year = getISOWeekYear(d);
+  const week = getISOWeek(d);
+  return `${year}-W${String(week).padStart(2, '0')}`;
+}
+
+function getMonthKey(dateCst: string): string {
+  return dateCst.slice(0, 7); // "YYYY-MM"
+}
+
+const GOAL_TAB_PLACEHOLDERS: Record<GoalTab, string> = {
+  daily: 'What do you plan to work on today?',
+  weekly: 'Goals for this week...',
+  monthly: 'Goals for this month...',
+};
 
 export default function DaySummary({ dateCst }: Props) {
   const [goals, setGoals] = useState<string | null>(null);
@@ -31,22 +50,39 @@ export default function DaySummary({ dateCst }: Props) {
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragItemRef = useRef<string | null>(null);
 
+  // Goal tabs state
+  const [goalTab, setGoalTab] = useState<GoalTab>('daily');
+  const [weeklyGoals, setWeeklyGoals] = useState<string | null>(null);
+  const [monthlyGoals, setMonthlyGoals] = useState<string | null>(null);
+
   const templateTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const itemTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const periodTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const fieldState: Record<TemplateField, string | null> = { goals, progress };
   const fieldStateRef = useRef<Record<TemplateField, string | null>>({ goals: null, progress: null });
   fieldStateRef.current = { goals, progress };
+  const weeklyGoalsRef = useRef<string | null>(null);
+  weeklyGoalsRef.current = weeklyGoals;
+  const monthlyGoalsRef = useRef<string | null>(null);
+  monthlyGoalsRef.current = monthlyGoals;
   const fieldSetters: Record<TemplateField, (v: string | null) => void> = {
     goals: setGoals,
     progress: setProgress,
   };
+
+  const weekKey = getWeekKey(dateCst);
+  const monthKey = getMonthKey(dateCst);
 
   // --- Template section handlers ---
 
   const saveTemplateField = useCallback((field: TemplateField, value: string | null) => {
     daySummaryService.save(dateCst, { [field]: value }).catch(() => {});
   }, [dateCst]);
+
+  const savePeriodGoals = useCallback((periodKey: string, periodType: 'weekly' | 'monthly', value: string | null) => {
+    periodGoalService.save(periodKey, { goals: value, period_type: periodType }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     setLoaded(false);
@@ -56,18 +92,29 @@ export default function DaySummary({ dateCst }: Props) {
     setShowTemplate(false);
     setExpandedItems(new Set());
 
-    daySummaryService.get(dateCst).then(data => {
+    const wk = getWeekKey(dateCst);
+    const mk = getMonthKey(dateCst);
+
+    Promise.all([
+      daySummaryService.get(dateCst),
+      periodGoalService.get(wk),
+      periodGoalService.get(mk),
+    ]).then(([data, weekData, monthData]) => {
       setGoals(data.goals);
       setProgress(data.progress);
       setItems(data.items || []);
+      setWeeklyGoals(weekData.goals);
+      setMonthlyGoals(monthData.goals);
 
-      const hasAny = data.goals || data.progress || (data.items && data.items.length > 0);
+      const hasAny = data.goals || data.progress || (data.items && data.items.length > 0) || weekData.goals || monthData.goals;
       setShowTemplate(!!hasAny);
       setLoaded(true);
     }).catch(() => {
       setGoals(null);
       setProgress(null);
       setItems([]);
+      setWeeklyGoals(null);
+      setMonthlyGoals(null);
       setShowTemplate(false);
       setLoaded(true);
     });
@@ -83,8 +130,20 @@ export default function DaySummary({ dateCst }: Props) {
           saveTemplateField(field, value);
         }
       }
+      // Flush period goal timers
+      for (const key of ['weekly', 'monthly'] as const) {
+        if (periodTimers.current[key]) {
+          clearTimeout(periodTimers.current[key]);
+          delete periodTimers.current[key];
+          if (key === 'weekly') {
+            savePeriodGoals(wk, 'weekly', weeklyGoalsRef.current);
+          } else {
+            savePeriodGoals(mk, 'monthly', monthlyGoalsRef.current);
+          }
+        }
+      }
     };
-  }, [dateCst, saveTemplateField]);
+  }, [dateCst, saveTemplateField, savePeriodGoals]);
 
   const handleTemplateChange = (field: TemplateField, value: string) => {
     const finalValue = value || null;
@@ -111,6 +170,128 @@ export default function DaySummary({ dateCst }: Props) {
       saveTemplateField(key, currentValue);
     }
     setEditingSection(null);
+  };
+
+  // --- Goals checkbox helpers ---
+
+  const normalizeGoalsText = (text: string): string => {
+    return text.split('\n').map(line => {
+      if (!line.trim()) return line;
+      if (/^- \[[ x]\] /.test(line)) return line;
+      return `- [ ] ${line.replace(/^[-*]\s*/, '')}`;
+    }).join('\n');
+  };
+
+  // Get/set goals for the active tab
+  const getActiveGoals = (): string | null => {
+    if (goalTab === 'daily') return goals;
+    if (goalTab === 'weekly') return weeklyGoals;
+    return monthlyGoals;
+  };
+
+  const setActiveGoals = (value: string | null) => {
+    if (goalTab === 'daily') {
+      setGoals(value);
+      fieldStateRef.current.goals = value;
+    } else if (goalTab === 'weekly') {
+      setWeeklyGoals(value);
+      weeklyGoalsRef.current = value;
+    } else {
+      setMonthlyGoals(value);
+      monthlyGoalsRef.current = value;
+    }
+  };
+
+  const saveActiveGoals = (value: string | null) => {
+    if (goalTab === 'daily') {
+      saveTemplateField('goals', value);
+    } else if (goalTab === 'weekly') {
+      savePeriodGoals(weekKey, 'weekly', value);
+    } else {
+      savePeriodGoals(monthKey, 'monthly', value);
+    }
+  };
+
+  const handleGoalsChange = (value: string) => {
+    const finalValue = value || null;
+    setActiveGoals(finalValue);
+    if (goalTab === 'daily') {
+      if (templateTimers.current.goals) clearTimeout(templateTimers.current.goals);
+      templateTimers.current.goals = setTimeout(() => saveTemplateField('goals', finalValue), 1500);
+    } else {
+      const timerKey = goalTab;
+      if (periodTimers.current[timerKey]) clearTimeout(periodTimers.current[timerKey]);
+      periodTimers.current[timerKey] = setTimeout(() => {
+        if (goalTab === 'weekly') savePeriodGoals(weekKey, 'weekly', finalValue);
+        else savePeriodGoals(monthKey, 'monthly', finalValue);
+      }, 1500);
+    }
+  };
+
+  const handleGoalsBlur = () => {
+    const currentValue = getActiveGoals();
+    // Clear the relevant timer
+    if (goalTab === 'daily') {
+      if (templateTimers.current.goals) {
+        clearTimeout(templateTimers.current.goals);
+        delete templateTimers.current.goals;
+      }
+    } else {
+      if (periodTimers.current[goalTab]) {
+        clearTimeout(periodTimers.current[goalTab]);
+        delete periodTimers.current[goalTab];
+      }
+    }
+
+    if (!currentValue?.trim()) {
+      setActiveGoals(null);
+      saveActiveGoals(null);
+    } else {
+      const normalized = normalizeGoalsText(currentValue);
+      setActiveGoals(normalized);
+      saveActiveGoals(normalized);
+    }
+    setEditingSection(null);
+  };
+
+  const handleGoalToggle = (lineIndex: number) => {
+    const value = getActiveGoals() || '';
+    const lines = value.split('\n');
+    const line = lines[lineIndex];
+    if (/^- \[x\] /.test(line)) {
+      lines[lineIndex] = line.replace('- [x] ', '- [ ] ');
+    } else if (/^- \[ \] /.test(line)) {
+      lines[lineIndex] = line.replace('- [ ] ', '- [x] ');
+    }
+    const updated = lines.join('\n');
+    setActiveGoals(updated);
+    saveActiveGoals(updated);
+  };
+
+  const handleGoalPush = async (lineIndex: number) => {
+    const value = goals || '';
+    const lines = value.split('\n');
+    const line = lines[lineIndex];
+    if (!line?.trim()) return;
+
+    const text = line.replace(/^- \[[ x]\] /, '');
+    const nextDateCst = format(addDays(new Date(dateCst + 'T12:00:00'), 1), 'yyyy-MM-dd');
+
+    try {
+      const nextDay = await daySummaryService.get(nextDateCst);
+      const nextGoals = nextDay.goals
+        ? nextDay.goals + '\n' + `- [ ] ${text}`
+        : `- [ ] ${text}`;
+      await daySummaryService.save(nextDateCst, { goals: nextGoals });
+    } catch {
+      await daySummaryService.save(nextDateCst, { goals: `- [ ] ${text}` });
+    }
+
+    lines.splice(lineIndex, 1);
+    const updated = lines.join('\n') || null;
+    setGoals(updated);
+    fieldStateRef.current.goals = updated;
+    saveTemplateField('goals', updated);
   };
 
   // --- Summary item handlers ---
@@ -211,11 +392,97 @@ export default function DaySummary({ dateCst }: Props) {
     );
   }
 
+  const renderGoalsContent = () => {
+    const activeGoals = getActiveGoals();
+    const isEditing = editingSection === 'goals';
+    const placeholder = GOAL_TAB_PLACEHOLDERS[goalTab];
+
+    if (isEditing) {
+      return (
+        <textarea
+          className={styles.noteTextarea}
+          value={activeGoals || ''}
+          onChange={e => handleGoalsChange(e.target.value)}
+          onBlur={handleGoalsBlur}
+          placeholder={placeholder}
+          autoFocus
+        />
+      );
+    }
+
+    if (activeGoals) {
+      return (
+        <div className={styles.goalsList}>
+          {activeGoals.split('\n').map((line, i) => {
+            if (!line.trim()) return <div key={i} style={{ height: '1.7em' }} />;
+            const checked = /^- \[x\] /.test(line);
+            const text = line.replace(/^- \[[ x]\] /, '');
+            return (
+              <div key={i} className={`${styles.goalItem} ${checked ? styles.goalChecked : ''}`}>
+                <span
+                  className={`${styles.goalCheckbox} ${checked ? styles.goalCheckboxChecked : ''}`}
+                  onClick={() => handleGoalToggle(i)}
+                  role="checkbox"
+                  aria-checked={checked}
+                >
+                  {checked && <span className={styles.goalCheckmark}>&#10003;</span>}
+                </span>
+                <span className={styles.goalText} onClick={() => startEditingSection('goals')}>
+                  <MarkdownLatex content={text} />
+                </span>
+                {goalTab === 'daily' && (
+                  <button
+                    className={styles.goalPushBtn}
+                    onClick={() => handleGoalPush(i)}
+                    title="Push to next day"
+                  >
+                    &#x21B7;
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className={styles.notePlaceholder}
+        onClick={() => startEditingSection('goals')}
+      >
+        {placeholder}
+      </div>
+    );
+  };
+
   return (
     <div className={styles.container}>
       {/* Goals & Progress post-it notes */}
       <div className={styles.noteGrid}>
-        {SECTIONS.map(({ key, label, placeholder }) => {
+        {/* Goals note with tabs */}
+        <div className={styles.note}>
+          <div className={styles.noteLabel}>
+            <span>Goals</span>
+            <div className={styles.goalTabs}>
+              {(['daily', 'weekly', 'monthly'] as GoalTab[]).map(tab => (
+                <button
+                  key={tab}
+                  className={`${styles.goalTab} ${goalTab === tab ? styles.goalTabActive : ''}`}
+                  onClick={() => { setGoalTab(tab); setEditingSection(null); }}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className={styles.noteRuled}>
+            {renderGoalsContent()}
+          </div>
+        </div>
+
+        {/* Progress note */}
+        {SECTIONS.filter(s => s.key === 'progress').map(({ key, label, placeholder }) => {
           const value = fieldState[key];
           const isEditing = editingSection === key;
 
