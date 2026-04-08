@@ -20,7 +20,7 @@ All four apps share the same tech stack and conventions. When in doubt, referenc
 ```
 npm run install:all       # Install dependencies for root, server/, and client/
 npm run dev               # Start both frontend (Vite) and backend (Express) concurrently
-npm run dev:server        # Backend only (Express on port 3002, tsx watch for hot reload)
+npm run dev:server        # Backend only (Express on port 3009, tsx watch for hot reload)
 npm run dev:client        # Frontend only (Vite on port 5174)
 npm run build             # Build both client and server for production
 npm run build:client      # Build frontend only (tsc && vite build)
@@ -28,9 +28,9 @@ npm run build:server      # Build backend only (tsc)
 npm start                 # Start production server (serves API + built frontend from client/dist/)
 ```
 
-**Port assignment:** Granary uses port **3002** (server) and **5174** (Vite dev) to avoid conflicts with Navigate (3001/5173), Scribe (3001/5173 — run one at a time), and Monolith (3001/5173). The Vite dev server proxies `/api` requests to `http://localhost:3002`.
+**Port assignment:** Granary uses port **3009** (server) and **5174** (Vite dev) to avoid conflicts with Navigate (3001/5173), Scribe (3001/5173 — run one at a time), and Monolith (3001/5173). The Vite dev server proxies `/api` requests to `http://localhost:3009`.
 
-No `.env` files. The only server environment variable is `PORT` (defaults to 3002).
+No `.env` files. The only server environment variable is `PORT` (defaults to 3009).
 
 ---
 
@@ -53,7 +53,7 @@ granary/
 │   │   ├── services/         # Data access layer (REST API calls)
 │   │   ├── hooks/            # Custom React hooks
 │   │   └── contexts/         # React contexts (theme)
-│   └── vite.config.ts        # Vite config with /api proxy to port 3002
+│   └── vite.config.ts        # Vite config with /api proxy to port 3009
 └── server/                   # Express backend
     ├── src/
     │   ├── index.ts          # Express entry point, mounts route modules
