@@ -22,16 +22,8 @@
   --color-danger: #ef4444;
   --color-info: #3b82f6;
 
-  --color-entry-definition: #8b5cf6;
-  --color-entry-theorem: #3b82f6;
-  --color-entry-proof: #ec4899;
-  --color-entry-counterexample: #f59e0b;
-  --color-entry-exercise: #10b981;
-  --color-entry-question: #f97316;
-  --color-entry-insight: #06b6d4;
-  --color-entry-example: #14b8a6;
   --color-entry-note: #6b7280;
-  --color-entry-reference: #8b5e3c;
+  --color-entry-question: #f97316;
 
   --color-priority-high: var(--color-danger);
   --color-priority-medium: var(--color-warning);
@@ -68,16 +60,8 @@
   --color-danger: #f87171;
   --color-info: #60a5fa;
 
-  --color-entry-definition: #a78bfa;
-  --color-entry-theorem: #60a5fa;
-  --color-entry-proof: #f472b6;
-  --color-entry-counterexample: #fbbf24;
-  --color-entry-exercise: #34d399;
-  --color-entry-question: #fb923c;
-  --color-entry-insight: #22d3ee;
-  --color-entry-example: #2dd4bf;
   --color-entry-note: #9ca3af;
-  --color-entry-reference: #c4956a;
+  --color-entry-question: #fb923c;
 
   --color-priority-high: var(--color-danger);
   --color-priority-medium: var(--color-warning);

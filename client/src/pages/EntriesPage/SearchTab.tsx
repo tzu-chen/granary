@@ -6,16 +6,8 @@ import MarkdownLatex from '../../components/MarkdownLatex/MarkdownLatex';
 import styles from './SearchTab.module.css';
 
 const TYPE_COLORS: Record<string, string> = {
-  definition: 'var(--color-entry-definition)',
-  theorem: 'var(--color-entry-theorem)',
-  proof_sketch: 'var(--color-entry-proof)',
-  counterexample: 'var(--color-entry-counterexample)',
-  exercise: 'var(--color-entry-exercise)',
-  question: 'var(--color-entry-question)',
-  insight: 'var(--color-entry-insight)',
-  example: 'var(--color-entry-example)',
   note: 'var(--color-entry-note)',
-  reference: 'var(--color-entry-reference)',
+  question: 'var(--color-entry-question)',
 };
 
 function getCSTDate(dateStr: string): string {

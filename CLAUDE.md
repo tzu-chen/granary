@@ -77,7 +77,7 @@ interface Entry {
   id: string;                          // UUID
   content: string;                     // Markdown with LaTeX (KaTeX syntax)
   tags: string[];                      // JSON array stored as TEXT in SQLite
-  entry_type: 'insight' | 'definition' | 'theorem' | 'proof_sketch' | 'example' | 'counterexample' | 'exercise' | 'question' | 'note';
+  entry_type: 'note' | 'question';
   source?: string;                     // Free text: "Brezis Ch.4", "arXiv:2301.12345", etc.
   links: EntryLink[];                  // Cross-app references (see below)
   is_reviewable: boolean;              // Whether this entry has been promoted to SRS
@@ -88,17 +88,13 @@ interface Entry {
 }
 ```
 
-**Entry types** matter for display and card generation:
-- `definition` / `theorem` — rendered with a styled header block (like a textbook environment)
-- `proof_sketch` — collapsible by default
-- `counterexample` — visually distinct (warning-colored accent)
-- `exercise` — tracks solved/unsolved status
-- `insight` / `note` — plain entries, the default journal mode
-- `question` — an open question to revisit later
+**Entry types** are intentionally minimal:
+- `note` — the default journal entry, used for everything that isn't an open question (insights, definitions, theorems, examples, references, exercises, etc.). Finer-grained classification lives in `tags`.
+- `question` — an open question to revisit later. Auto-tracked: defaults to `status='open'` and `priority='medium'`.
 
 ### Open / Resolved Tracking
 
-Entries with `entry_type` of `question` or `exercise` default to `status = 'open'` on creation. Question entries also default to `priority = 'medium'`; exercise entries do not get a priority. All other entry types default to `status = NULL, priority = NULL` (not trackable), though any entry can be manually set to open if desired.
+Entries with `entry_type = 'question'` default to `status = 'open'` and `priority = 'medium'` on creation. `note` entries default to `status = NULL, priority = NULL` (not trackable), though any entry can be manually set to open if desired.
 
 When resolving an entry, a **resolution note** is created — this is a new entry with `entry_type = 'note'` (or any appropriate type) that links back to the original via a `resolution_of` field. This creates a pair: the original question and the entry that answers it.
 
@@ -140,8 +136,8 @@ interface ReviewCard {
 **Card types:**
 - `prompt_response` — freeform question/answer (user writes both sides)
 - `cloze` — content with `{{c1::hidden}}` cloze deletions in the front field
-- `state_theorem` — front is the theorem name, back is the precise statement (auto-generated from `theorem` entries)
-- `proof_idea` — front is the theorem statement, back is the proof sketch (auto-generated from `proof_sketch` entries linked to a `theorem` entry)
+- `state_theorem` — front is the theorem name, back is the precise statement (auto-generated from entries tagged `theorem`)
+- `proof_idea` — front is the theorem statement, back is the proof sketch (auto-generated from entries tagged `proof_sketch` linked to a `theorem`-tagged entry)
 
 ### Cross-App Links
 
@@ -198,7 +194,7 @@ CREATE TABLE IF NOT EXISTS entries (
   content TEXT NOT NULL,
   tags TEXT NOT NULL DEFAULT '[]',          -- JSON array of strings
   entry_type TEXT NOT NULL DEFAULT 'note'
-    CHECK (entry_type IN ('insight', 'definition', 'theorem', 'proof_sketch', 'example', 'counterexample', 'exercise', 'question', 'note')),
+    CHECK (entry_type IN ('note', 'question')),
   source TEXT,
   links TEXT NOT NULL DEFAULT '[]',         -- JSON array of EntryLink objects
   is_reviewable INTEGER NOT NULL DEFAULT 0,
@@ -210,10 +206,9 @@ CREATE TABLE IF NOT EXISTS entries (
   updated_at TEXT NOT NULL                  -- ISO 8601
 );
 
--- Auto-default: entry creation logic should set status='open' when entry_type is
--- 'question' or 'exercise'. Priority='medium' is only auto-set for 'question', not 'exercise'.
--- This is handled in the route handler, not as a SQL default, because the default
--- depends on entry_type which SQL DEFAULT cannot express.
+-- Auto-default: entry creation logic sets status='open' and priority='medium' when
+-- entry_type='question'. Handled in the route handler, not as a SQL default, because
+-- the default depends on entry_type which SQL DEFAULT cannot express.
 
 CREATE TABLE IF NOT EXISTS resolutions (
   id TEXT PRIMARY KEY,
@@ -350,7 +345,7 @@ All under `/api` prefix. RESTful verbs. Parameterized SQL only — no string int
 |--------|------|-------------|
 | GET | `/api/entries` | List entries. Query params: `date_cst` (single day), `start`/`end` (range), `tag`, `entry_type`, `source`, `is_reviewable`, `status`, `search` (full-text via FTS5 — ranked by BM25 relevance when present; returns newest-first when absent). All filters combinable. |
 | GET | `/api/entries/:id` | Get single entry. Includes resolution (if resolved) and resolution_of (if this entry is a resolution for another). |
-| POST | `/api/entries` | Create entry. Auto-sets `status='open'` when `entry_type` is `question` or `exercise`. Auto-sets `priority='medium'` only for `question` entries, unless explicitly provided. |
+| POST | `/api/entries` | Create entry. Auto-sets `status='open'` and `priority='medium'` when `entry_type='question'`, unless explicitly provided. |
 | PUT | `/api/entries/:id` | Update entry |
 | DELETE | `/api/entries/:id` | Delete entry (cascades to review_cards → review_log, resolutions) |
 | POST | `/api/entries/:id/promote` | Create review card(s) for entry, set `is_reviewable = 1`. Body: `{ cards: [{ card_type, front, back }] }` |
@@ -496,7 +491,7 @@ The spaced repetition drill session.
 #### Tab: Open
 
 All unresolved entries across all dates.
-- **Filter controls**: filter by entry_type (question, exercise, or all), by tag, by source, by priority
+- **Filter controls**: filter by entry_type (note, question, or all), by tag, by source, by priority
 - **Entry list** sorted by priority (high first), then by age (oldest first). Each entry shows:
   - Priority badge (colored dot or pill: high=red, medium=yellow, low=blue) — clickable to change priority inline
   - Entry type icon/label
@@ -597,11 +592,7 @@ Design token naming convention (match Scribe's pattern):
   --color-danger: ...;
   --color-info: ...;
   /* Entry type accent colors */
-  --color-entry-definition: ...;
-  --color-entry-theorem: ...;
-  --color-entry-proof: ...;
-  --color-entry-counterexample: ...;
-  --color-entry-exercise: ...;
+  --color-entry-note: ...;
   --color-entry-question: ...;
 }
 ```
@@ -649,6 +640,8 @@ No test framework configured. Validate changes by running `npm run build` (runs 
 ---
 
 ## Adding a New Entry Type
+
+The entry-type taxonomy is intentionally minimal (`note`, `question`). Finer-grained classification (definition, theorem, exercise, reference, etc.) belongs in `tags`, not in `entry_type`. Resist adding new entry types — prefer a tag convention. If a new type is genuinely needed:
 
 1. Add the value to the `entry_type` CHECK constraint in `server/src/db.ts` (requires migration or rebuild)
 2. Add to the `EntryType` union type in `client/src/types.ts`

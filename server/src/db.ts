@@ -20,7 +20,7 @@ export function initializeDatabase(): void {
       content TEXT NOT NULL,
       tags TEXT NOT NULL DEFAULT '[]',
       entry_type TEXT NOT NULL DEFAULT 'note'
-        CHECK (entry_type IN ('insight', 'definition', 'theorem', 'proof_sketch', 'example', 'counterexample', 'exercise', 'question', 'note', 'reference')),
+        CHECK (entry_type IN ('note', 'question')),
       source TEXT,
       links TEXT NOT NULL DEFAULT '[]',
       is_reviewable INTEGER NOT NULL DEFAULT 0,
@@ -160,44 +160,61 @@ export function initializeDatabase(): void {
   db.exec("CREATE INDEX IF NOT EXISTS idx_entries_status ON entries(status)");
   db.exec("CREATE INDEX IF NOT EXISTS idx_entries_priority ON entries(priority)");
 
-  // Migration: add 'reference' to entry_type CHECK constraint
-  // SQLite doesn't support ALTER CHECK, so recreate the table if the constraint is outdated
+  // Migration: collapse entry_type to {note, question}; old types become tags.
+  // Detect outdated schemas by attempting to insert a legacy type — if accepted,
+  // the CHECK constraint is the old one and we need to migrate.
   try {
-    // Test if 'reference' is allowed by attempting a dummy insert + rollback
-    const testStmt = db.prepare("INSERT INTO entries (id, content, tags, entry_type, links, created_at, updated_at) VALUES ('__test_ref__', '', '[]', 'reference', '[]', '', '')");
+    let needsCollapse = false;
     try {
-      testStmt.run();
-      // If it succeeded, delete the test row — constraint already allows 'reference'
-      db.prepare("DELETE FROM entries WHERE id = '__test_ref__'").run();
+      db.prepare(
+        "INSERT INTO entries (id, content, tags, entry_type, links, created_at, updated_at) VALUES ('__test_collapse__', '', '[]', 'theorem', '[]', '', '')"
+      ).run();
+      db.prepare("DELETE FROM entries WHERE id = '__test_collapse__'").run();
+      needsCollapse = true;
     } catch (_) {
-      // CHECK constraint rejected 'reference' — need to recreate table
-      // Temporarily disable foreign keys so DROP TABLE doesn't fail
-      db.pragma('foreign_keys = OFF');
-      db.exec(`
-        CREATE TABLE entries_new (
-          id TEXT PRIMARY KEY,
-          content TEXT NOT NULL,
-          tags TEXT NOT NULL DEFAULT '[]',
-          entry_type TEXT NOT NULL DEFAULT 'note'
-            CHECK (entry_type IN ('insight', 'definition', 'theorem', 'proof_sketch', 'example', 'counterexample', 'exercise', 'question', 'note', 'reference')),
-          source TEXT,
-          links TEXT NOT NULL DEFAULT '[]',
-          is_reviewable INTEGER NOT NULL DEFAULT 0,
-          status TEXT DEFAULT NULL,
-          priority TEXT DEFAULT NULL,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL
-        );
-        INSERT INTO entries_new SELECT id, content, tags, entry_type, source, links, is_reviewable, status, priority, created_at, updated_at FROM entries;
-        DROP TABLE entries;
-        ALTER TABLE entries_new RENAME TO entries;
+      // 'theorem' rejected — schema is already on the new constraint
+    }
 
-        CREATE INDEX IF NOT EXISTS idx_entries_created_at ON entries(created_at);
-        CREATE INDEX IF NOT EXISTS idx_entries_entry_type ON entries(entry_type);
-        CREATE INDEX IF NOT EXISTS idx_entries_is_reviewable ON entries(is_reviewable);
-        CREATE INDEX IF NOT EXISTS idx_entries_status ON entries(status);
-        CREATE INDEX IF NOT EXISTS idx_entries_priority ON entries(priority);
-      `);
+    if (needsCollapse) {
+      db.pragma('foreign_keys = OFF');
+      const collapse = db.transaction(() => {
+        const oldEntries = db.prepare(
+          "SELECT id, entry_type, tags FROM entries WHERE entry_type NOT IN ('note', 'question')"
+        ).all() as { id: string; entry_type: string; tags: string }[];
+        const updateEntry = db.prepare("UPDATE entries SET tags = ?, entry_type = 'note' WHERE id = ?");
+        for (const e of oldEntries) {
+          let parsed: string[] = [];
+          try { parsed = JSON.parse(e.tags); } catch { parsed = []; }
+          if (!parsed.includes(e.entry_type)) parsed.unshift(e.entry_type);
+          updateEntry.run(JSON.stringify(parsed), e.id);
+        }
+        db.exec(`
+          CREATE TABLE entries_new (
+            id TEXT PRIMARY KEY,
+            content TEXT NOT NULL,
+            tags TEXT NOT NULL DEFAULT '[]',
+            entry_type TEXT NOT NULL DEFAULT 'note'
+              CHECK (entry_type IN ('note', 'question')),
+            source TEXT,
+            links TEXT NOT NULL DEFAULT '[]',
+            is_reviewable INTEGER NOT NULL DEFAULT 0,
+            status TEXT DEFAULT NULL,
+            priority TEXT DEFAULT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+          INSERT INTO entries_new SELECT id, content, tags, entry_type, source, links, is_reviewable, status, priority, created_at, updated_at FROM entries;
+          DROP TABLE entries;
+          ALTER TABLE entries_new RENAME TO entries;
+
+          CREATE INDEX IF NOT EXISTS idx_entries_created_at ON entries(created_at);
+          CREATE INDEX IF NOT EXISTS idx_entries_entry_type ON entries(entry_type);
+          CREATE INDEX IF NOT EXISTS idx_entries_is_reviewable ON entries(is_reviewable);
+          CREATE INDEX IF NOT EXISTS idx_entries_status ON entries(status);
+          CREATE INDEX IF NOT EXISTS idx_entries_priority ON entries(priority);
+        `);
+      });
+      collapse();
       db.pragma('foreign_keys = ON');
     }
   } catch (_) { /* table might not exist yet or other issue — safe to ignore */ }
