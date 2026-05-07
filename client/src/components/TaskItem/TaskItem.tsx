@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Task, TaskState } from '../../types';
+import { Task, TaskState, TaskKind } from '../../types';
 import TaskStateTag from '../TaskStateTag/TaskStateTag';
+import TaskKindTag from '../TaskKindTag/TaskKindTag';
 import StaleTaskBanner from '../StaleTaskBanner/StaleTaskBanner';
 import MarkdownLatex from '../MarkdownLatex/MarkdownLatex';
 import styles from './TaskItem.module.css';
@@ -8,7 +9,7 @@ import styles from './TaskItem.module.css';
 interface Props {
   task: Task;
   todayCst: string;
-  onChange: (patch: { title?: string; notes?: string | null }) => void;
+  onChange: (patch: { title?: string; notes?: string | null; kind?: TaskKind }) => void;
   onStateChange: (state: TaskState, reason?: string) => void;
   onDelete: () => void;
   onDragStart?: () => void;
@@ -142,6 +143,11 @@ export default function TaskItem({
 
       <div className={styles.row}>
         <span className={styles.dragHandle} title="Drag to reorder">&#8942;&#8942;</span>
+
+        <TaskKindTag
+          kind={task.kind}
+          onChange={(k) => onChange({ kind: k })}
+        />
 
         <TaskStateTag
           state={task.state}

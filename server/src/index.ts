@@ -12,7 +12,6 @@ import openRouter from './routes/open';
 import healthRouter from './routes/health';
 import scribeRouter from './routes/scribe';
 import sourcesRouter from './routes/sources';
-import periodGoalsRouter from './routes/periodGoals';
 import tasksRouter from './routes/tasks';
 
 const app = express();
@@ -31,7 +30,6 @@ app.use('/api/settings', settingsRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/scribe/books', scribeRouter);
 app.use('/api/sources', sourcesRouter);
-app.use('/api/period-goals', periodGoalsRouter);
 app.use('/api/tasks', tasksRouter);
 
 // Serve static frontend in production

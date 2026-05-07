@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Task, TaskState } from '../../types';
+import { Task, TaskState, TaskKind } from '../../types';
 import { taskService } from '../../services/api';
 import TaskItem from '../TaskItem/TaskItem';
 import styles from './TasksBlock.module.css';
@@ -106,7 +106,7 @@ export default function TasksBlock({ dateCst, todayCst }: Props) {
     }
   };
 
-  const handleUpdate = async (task: Task, patch: { title?: string; notes?: string | null }) => {
+  const handleUpdate = async (task: Task, patch: { title?: string; notes?: string | null; kind?: TaskKind }) => {
     try {
       const updated = await taskService.update(task.id, patch);
       setTasks(prev => prev.map(t => t.id === task.id ? updated : t));

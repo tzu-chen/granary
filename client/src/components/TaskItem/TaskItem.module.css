@@ -3,7 +3,6 @@
   border-radius: var(--radius-md);
   background: var(--color-bg-secondary);
   transition: border-color 0.15s, opacity 0.2s;
-  overflow: hidden;
 }
 
 .task:hover {

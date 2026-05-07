@@ -162,10 +162,13 @@ export const ENTRY_TYPES: { value: EntryType; label: string }[] = [
 
 export type TaskState = 'planned' | 'in_progress' | 'done' | 'abandoned' | 'blocked';
 
+export type TaskKind = 'goal' | 'task' | 'question';
+
 export interface Task {
   id: string;
   title: string;
   notes: string | null;
+  kind: TaskKind;
   state: TaskState;
   state_reason: string | null;
   created_on: string;
@@ -181,4 +184,10 @@ export const TASK_STATES: { value: TaskState; label: string }[] = [
   { value: 'done', label: 'Done' },
   { value: 'blocked', label: 'Blocked' },
   { value: 'abandoned', label: 'Abandoned' },
+];
+
+export const TASK_KINDS: { value: TaskKind; label: string }[] = [
+  { value: 'goal', label: 'Goal' },
+  { value: 'task', label: 'Task' },
+  { value: 'question', label: 'Question' },
 ];

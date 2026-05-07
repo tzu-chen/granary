@@ -106,6 +106,8 @@ export function initializeDatabase(): void {
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
       notes TEXT,
+      kind TEXT NOT NULL DEFAULT 'task'
+        CHECK (kind IN ('goal','task','question')),
       state TEXT NOT NULL DEFAULT 'planned'
         CHECK (state IN ('planned','in_progress','done','abandoned','blocked')),
       state_reason TEXT,
@@ -133,6 +135,12 @@ export function initializeDatabase(): void {
     CREATE INDEX IF NOT EXISTS idx_tasks_completed_on ON tasks(completed_on);
     CREATE INDEX IF NOT EXISTS idx_tasks_state_position ON tasks(state, position);
   `);
+
+  // Migration: add kind column to tasks for existing DBs (CHECK constraint omitted on ALTER;
+  // application-level validation in the route handler is authoritative).
+  // Must run before any index on `kind` is created.
+  try { db.exec("ALTER TABLE tasks ADD COLUMN kind TEXT NOT NULL DEFAULT 'task'"); } catch (_) { /* column exists */ }
+  db.exec("CREATE INDEX IF NOT EXISTS idx_tasks_kind ON tasks(kind)");
 
   // Migration: day_summaries — migrate from old single-content schema to structured template
   try {

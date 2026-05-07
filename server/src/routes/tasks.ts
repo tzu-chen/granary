@@ -6,6 +6,7 @@ const router = Router();
 
 const ACTIVE_STATES = ['planned', 'in_progress', 'blocked'];
 const VALID_STATES = ['planned', 'in_progress', 'done', 'abandoned', 'blocked'];
+const VALID_KINDS = ['goal', 'task', 'question'];
 
 // PATCH /reorder — must come before /:id routes
 router.patch('/reorder', (req: Request, res: Response) => {
@@ -103,11 +104,12 @@ router.get('/:id', (req: Request, res: Response) => {
 // POST / — create
 router.post('/', (req: Request, res: Response) => {
   try {
-    const { title, notes, state } = req.body;
+    const { title, notes, state, kind } = req.body;
     if (!title || !String(title).trim()) {
       return res.status(400).json({ error: 'Title is required' });
     }
     const taskState = state && VALID_STATES.includes(state) ? state : 'planned';
+    const taskKind = kind && VALID_KINDS.includes(kind) ? kind : 'task';
 
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
@@ -121,9 +123,9 @@ router.post('/', (req: Request, res: Response) => {
     const completedOn = (taskState === 'done' || taskState === 'abandoned') ? today : null;
 
     db.prepare(
-      `INSERT INTO tasks (id, title, notes, state, state_reason, created_on, completed_on, position, created_at, updated_at)
-       VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`
-    ).run(id, String(title).trim(), notes ?? null, taskState, today, completedOn, position, now, now);
+      `INSERT INTO tasks (id, title, notes, kind, state, state_reason, created_on, completed_on, position, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`
+    ).run(id, String(title).trim(), notes ?? null, taskKind, taskState, today, completedOn, position, now, now);
 
     const row = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
     res.status(201).json(row);
@@ -132,11 +134,11 @@ router.post('/', (req: Request, res: Response) => {
   }
 });
 
-// PUT /:id — update title and/or notes
+// PUT /:id — update title, notes, and/or kind
 router.put('/:id', (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, notes } = req.body;
+    const { title, notes, kind } = req.body;
 
     const existing = db.prepare('SELECT id FROM tasks WHERE id = ?').get(id);
     if (!existing) return res.status(404).json({ error: 'Task not found' });
@@ -152,6 +154,11 @@ router.put('/:id', (req: Request, res: Response) => {
     if ('notes' in req.body) {
       updates.push('notes = ?');
       params.push(notes ?? null);
+    }
+    if ('kind' in req.body) {
+      if (!VALID_KINDS.includes(kind)) return res.status(400).json({ error: 'Invalid kind' });
+      updates.push('kind = ?');
+      params.push(kind);
     }
 
     if (updates.length > 0) {

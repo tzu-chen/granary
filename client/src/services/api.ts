@@ -1,4 +1,4 @@
-import { Entry, EntryWithResolution, DaySummary, SummaryItem, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority, ScribeBook, Task, TaskState } from '../types';
+import { Entry, EntryWithResolution, DaySummary, SummaryItem, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority, ScribeBook, Task, TaskState, TaskKind } from '../types';
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`/api${path}`, {
@@ -41,13 +41,6 @@ export const daySummaryService = {
   get: (dateCst: string) => request<DaySummary>('GET', `/day-summaries/${dateCst}`),
   save: (dateCst: string, data: { goals?: string | null; progress?: string | null; open_questions?: string | null }) =>
     request<DaySummary>('PUT', `/day-summaries/${dateCst}`, data),
-};
-
-export const periodGoalService = {
-  get: (periodKey: string) =>
-    request<{ period_key: string; goals: string | null; updated_at: string | null }>('GET', `/period-goals/${periodKey}`),
-  save: (periodKey: string, data: { goals: string | null; period_type: 'weekly' | 'monthly' }) =>
-    request<{ period_key: string; goals: string | null; updated_at: string }>('PUT', `/period-goals/${periodKey}`, data),
 };
 
 export const summaryItemService = {
@@ -134,9 +127,9 @@ export const taskService = {
   listActive: () => request<Task[]>('GET', '/tasks/active'),
   listByDay: (dateCst: string) => request<Task[]>('GET', `/tasks/by-day/${dateCst}`),
   get: (id: string) => request<Task>('GET', `/tasks/${id}`),
-  create: (data: { title: string; notes?: string; state?: TaskState }) =>
+  create: (data: { title: string; notes?: string; state?: TaskState; kind?: TaskKind }) =>
     request<Task>('POST', '/tasks', data),
-  update: (id: string, data: { title?: string; notes?: string | null }) =>
+  update: (id: string, data: { title?: string; notes?: string | null; kind?: TaskKind }) =>
     request<Task>('PUT', `/tasks/${id}`, data),
   setState: (id: string, state: TaskState, reason?: string) =>
     request<Task>('PATCH', `/tasks/${id}/state`, { state, reason }),

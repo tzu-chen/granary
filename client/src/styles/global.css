@@ -41,6 +41,14 @@
   --color-state-blocked-bg: rgba(239, 68, 68, 0.13);
   --color-state-abandoned-bg: rgba(134, 142, 150, 0.13);
 
+  --color-kind-goal: #8b5cf6;
+  --color-kind-task: #6b7280;
+  --color-kind-question: #f97316;
+
+  --color-kind-goal-bg: rgba(139, 92, 246, 0.14);
+  --color-kind-task-bg: rgba(107, 114, 128, 0.14);
+  --color-kind-question-bg: rgba(249, 115, 22, 0.14);
+
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -90,6 +98,14 @@
   --color-state-done-bg: rgba(52, 211, 153, 0.18);
   --color-state-blocked-bg: rgba(248, 113, 113, 0.18);
   --color-state-abandoned-bg: rgba(113, 128, 150, 0.18);
+
+  --color-kind-goal: #a78bfa;
+  --color-kind-task: #9ca3af;
+  --color-kind-question: #fb923c;
+
+  --color-kind-goal-bg: rgba(167, 139, 250, 0.2);
+  --color-kind-task-bg: rgba(156, 163, 175, 0.18);
+  --color-kind-question-bg: rgba(251, 146, 60, 0.18);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
