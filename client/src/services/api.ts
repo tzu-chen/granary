@@ -1,4 +1,4 @@
-import { Entry, EntryWithResolution, DaySummary, SummaryItem, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority, ScribeBook } from '../types';
+import { Entry, EntryWithResolution, DaySummary, SummaryItem, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority, ScribeBook, Task, TaskState } from '../types';
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`/api${path}`, {
@@ -118,6 +118,30 @@ export const scribeService = {
 
 export const sourceService = {
   list: () => request<{ source: string; count: number }[]>('GET', '/sources'),
+};
+
+export const taskService = {
+  list: (filters?: { state?: TaskState[]; createdOn?: string; completedOn?: string; since?: string; until?: string }) => {
+    const params = new URLSearchParams();
+    if (filters?.state && filters.state.length > 0) params.set('state', filters.state.join(','));
+    if (filters?.createdOn) params.set('created_on', filters.createdOn);
+    if (filters?.completedOn) params.set('completed_on', filters.completedOn);
+    if (filters?.since) params.set('since', filters.since);
+    if (filters?.until) params.set('until', filters.until);
+    const qs = params.toString() ? `?${params}` : '';
+    return request<Task[]>('GET', `/tasks${qs}`);
+  },
+  listActive: () => request<Task[]>('GET', '/tasks/active'),
+  listByDay: (dateCst: string) => request<Task[]>('GET', `/tasks/by-day/${dateCst}`),
+  get: (id: string) => request<Task>('GET', `/tasks/${id}`),
+  create: (data: { title: string; notes?: string; state?: TaskState }) =>
+    request<Task>('POST', '/tasks', data),
+  update: (id: string, data: { title?: string; notes?: string | null }) =>
+    request<Task>('PUT', `/tasks/${id}`, data),
+  setState: (id: string, state: TaskState, reason?: string) =>
+    request<Task>('PATCH', `/tasks/${id}/state`, { state, reason }),
+  reorder: (ids: string[]) => request<{ success: boolean }>('PATCH', '/tasks/reorder', { ids }),
+  delete: (id: string) => request<{ success: boolean }>('DELETE', `/tasks/${id}`),
 };
 
 export const settingsService = {

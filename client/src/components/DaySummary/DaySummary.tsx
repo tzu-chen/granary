@@ -1,21 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { addDays, format, getISOWeek, getISOWeekYear } from 'date-fns';
+import { getISOWeek, getISOWeekYear } from 'date-fns';
 import { SummaryItem } from '../../types';
 import { daySummaryService, summaryItemService, periodGoalService } from '../../services/api';
 import MarkdownLatex from '../MarkdownLatex/MarkdownLatex';
+import TasksBlock from '../TasksBlock/TasksBlock';
 import styles from './DaySummary.module.css';
 
 interface Props {
   dateCst: string;
+  todayCst: string;
 }
 
-type TemplateField = 'goals' | 'progress';
-type GoalTab = 'daily' | 'weekly' | 'monthly';
-
-const SECTIONS: { key: TemplateField; label: string; placeholder: string }[] = [
-  { key: 'goals', label: 'Goals', placeholder: 'What do you plan to work on today?' },
-  { key: 'progress', label: 'Progress', placeholder: 'What did you actually accomplish?' },
-];
+type GoalTab = 'weekly' | 'monthly';
 
 function getWeekKey(dateCst: string): string {
   const d = new Date(dateCst + 'T12:00:00');
@@ -29,55 +25,55 @@ function getMonthKey(dateCst: string): string {
 }
 
 const GOAL_TAB_PLACEHOLDERS: Record<GoalTab, string> = {
-  daily: 'What do you plan to work on today?',
   weekly: 'Goals for this week...',
   monthly: 'Goals for this month...',
 };
 
-export default function DaySummary({ dateCst }: Props) {
-  const [goals, setGoals] = useState<string | null>(null);
-  const [progress, setProgress] = useState<string | null>(null);
+const OPEN_QUESTIONS_PLACEHOLDER = 'Quick notes on unresolved questions for the day...';
+
+export default function DaySummary({ dateCst, todayCst }: Props) {
+  const [openQuestions, setOpenQuestions] = useState<string | null>(null);
+  const [goalsArchive, setGoalsArchive] = useState<string | null>(null);
+  const [progressArchive, setProgressArchive] = useState<string | null>(null);
   const [items, setItems] = useState<SummaryItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [editingSection, setEditingSection] = useState<TemplateField | null>(null);
+  const [editingOQ, setEditingOQ] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemTitle, setNewItemTitle] = useState('');
   const [newItemContent, setNewItemContent] = useState('');
   const [newItemTag, setNewItemTag] = useState('');
   const [showTemplate, setShowTemplate] = useState(false);
+  const [archiveExpanded, setArchiveExpanded] = useState(false);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragItemRef = useRef<string | null>(null);
 
-  // Goal tabs state
-  const [goalTab, setGoalTab] = useState<GoalTab>('daily');
+  // Goal tabs state — daily goals are migrated to tasks; only weekly/monthly remain.
+  const [goalTab, setGoalTab] = useState<GoalTab>('weekly');
   const [weeklyGoals, setWeeklyGoals] = useState<string | null>(null);
   const [monthlyGoals, setMonthlyGoals] = useState<string | null>(null);
+  const [editingGoals, setEditingGoals] = useState(false);
 
-  const templateTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const oqTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const itemTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const periodTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  const fieldState: Record<TemplateField, string | null> = { goals, progress };
-  const fieldStateRef = useRef<Record<TemplateField, string | null>>({ goals: null, progress: null });
-  fieldStateRef.current = { goals, progress };
+  const oqRef = useRef<string | null>(null);
+  oqRef.current = openQuestions;
   const weeklyGoalsRef = useRef<string | null>(null);
   weeklyGoalsRef.current = weeklyGoals;
   const monthlyGoalsRef = useRef<string | null>(null);
   monthlyGoalsRef.current = monthlyGoals;
-  const fieldSetters: Record<TemplateField, (v: string | null) => void> = {
-    goals: setGoals,
-    progress: setProgress,
-  };
 
   const weekKey = getWeekKey(dateCst);
   const monthKey = getMonthKey(dateCst);
 
-  // --- Template section handlers ---
+  const isPastDay = dateCst < todayCst;
+  const hasArchive = isPastDay && (!!goalsArchive || !!progressArchive);
 
-  const saveTemplateField = useCallback((field: TemplateField, value: string | null) => {
-    daySummaryService.save(dateCst, { [field]: value }).catch(() => {});
+  const saveOQ = useCallback((value: string | null) => {
+    daySummaryService.save(dateCst, { open_questions: value }).catch(() => {});
   }, [dateCst]);
 
   const savePeriodGoals = useCallback((periodKey: string, periodType: 'weekly' | 'monthly', value: string | null) => {
@@ -86,10 +82,12 @@ export default function DaySummary({ dateCst }: Props) {
 
   useEffect(() => {
     setLoaded(false);
-    setEditingSection(null);
+    setEditingOQ(false);
+    setEditingGoals(false);
     setEditingItemId(null);
     setShowAddItem(false);
     setShowTemplate(false);
+    setArchiveExpanded(false);
     setExpandedItems(new Set());
 
     const wk = getWeekKey(dateCst);
@@ -100,18 +98,20 @@ export default function DaySummary({ dateCst }: Props) {
       periodGoalService.get(wk),
       periodGoalService.get(mk),
     ]).then(([data, weekData, monthData]) => {
-      setGoals(data.goals);
-      setProgress(data.progress);
+      setOpenQuestions(data.open_questions);
+      setGoalsArchive(data.goals);
+      setProgressArchive(data.progress);
       setItems(data.items || []);
       setWeeklyGoals(weekData.goals);
       setMonthlyGoals(monthData.goals);
 
-      const hasAny = data.goals || data.progress || (data.items && data.items.length > 0) || weekData.goals || monthData.goals;
+      const hasAny = !!data.open_questions || (data.items && data.items.length > 0) || !!weekData.goals || !!monthData.goals;
       setShowTemplate(!!hasAny);
       setLoaded(true);
     }).catch(() => {
-      setGoals(null);
-      setProgress(null);
+      setOpenQuestions(null);
+      setGoalsArchive(null);
+      setProgressArchive(null);
       setItems([]);
       setWeeklyGoals(null);
       setMonthlyGoals(null);
@@ -121,79 +121,56 @@ export default function DaySummary({ dateCst }: Props) {
 
     return () => {
       // Flush pending debounce saves before switching dates or unmounting
-      const fields: TemplateField[] = ['goals', 'progress'];
-      for (const field of fields) {
-        if (templateTimers.current[field]) {
-          clearTimeout(templateTimers.current[field]);
-          delete templateTimers.current[field];
-          const value = fieldStateRef.current[field];
-          saveTemplateField(field, value);
-        }
+      if (oqTimer.current) {
+        clearTimeout(oqTimer.current);
+        oqTimer.current = null;
+        saveOQ(oqRef.current);
       }
-      // Flush period goal timers
       for (const key of ['weekly', 'monthly'] as const) {
         if (periodTimers.current[key]) {
           clearTimeout(periodTimers.current[key]);
           delete periodTimers.current[key];
-          if (key === 'weekly') {
-            savePeriodGoals(wk, 'weekly', weeklyGoalsRef.current);
-          } else {
-            savePeriodGoals(mk, 'monthly', monthlyGoalsRef.current);
-          }
+          if (key === 'weekly') savePeriodGoals(wk, 'weekly', weeklyGoalsRef.current);
+          else savePeriodGoals(mk, 'monthly', monthlyGoalsRef.current);
         }
       }
     };
-  }, [dateCst, saveTemplateField, savePeriodGoals]);
+  }, [dateCst, saveOQ, savePeriodGoals]);
 
-  const handleTemplateChange = (field: TemplateField, value: string) => {
+  // --- Open Questions handlers ---
+
+  const handleOQChange = (value: string) => {
     const finalValue = value || null;
-    fieldSetters[field](finalValue);
-    fieldStateRef.current[field] = finalValue;
-    if (templateTimers.current[field]) clearTimeout(templateTimers.current[field]);
-    templateTimers.current[field] = setTimeout(() => saveTemplateField(field, finalValue), 1500);
+    setOpenQuestions(finalValue);
+    oqRef.current = finalValue;
+    if (oqTimer.current) clearTimeout(oqTimer.current);
+    oqTimer.current = setTimeout(() => saveOQ(finalValue), 1500);
   };
 
-  const startEditingSection = (key: TemplateField) => {
-    setEditingSection(key);
-  };
-
-  const handleSectionBlur = (key: TemplateField) => {
-    const currentValue = fieldStateRef.current[key];
-    if (templateTimers.current[key]) {
-      clearTimeout(templateTimers.current[key]);
-      delete templateTimers.current[key];
+  const handleOQBlur = () => {
+    if (oqTimer.current) {
+      clearTimeout(oqTimer.current);
+      oqTimer.current = null;
     }
-    if (!currentValue?.trim()) {
-      fieldSetters[key](null);
-      saveTemplateField(key, null);
+    const value = oqRef.current;
+    if (!value?.trim()) {
+      setOpenQuestions(null);
+      oqRef.current = null;
+      saveOQ(null);
     } else {
-      saveTemplateField(key, currentValue);
+      saveOQ(value);
     }
-    setEditingSection(null);
+    setEditingOQ(false);
   };
 
-  // --- Goals checkbox helpers ---
+  // --- Period goals handlers ---
 
-  const normalizeGoalsText = (text: string): string => {
-    return text.split('\n').map(line => {
-      if (!line.trim()) return line;
-      if (/^- \[[ x]\] /.test(line)) return line;
-      return `- [ ] ${line.replace(/^[-*]\s*/, '')}`;
-    }).join('\n');
-  };
-
-  // Get/set goals for the active tab
   const getActiveGoals = (): string | null => {
-    if (goalTab === 'daily') return goals;
-    if (goalTab === 'weekly') return weeklyGoals;
-    return monthlyGoals;
+    return goalTab === 'weekly' ? weeklyGoals : monthlyGoals;
   };
 
   const setActiveGoals = (value: string | null) => {
-    if (goalTab === 'daily') {
-      setGoals(value);
-      fieldStateRef.current.goals = value;
-    } else if (goalTab === 'weekly') {
+    if (goalTab === 'weekly') {
       setWeeklyGoals(value);
       weeklyGoalsRef.current = value;
     } else {
@@ -203,46 +180,35 @@ export default function DaySummary({ dateCst }: Props) {
   };
 
   const saveActiveGoals = (value: string | null) => {
-    if (goalTab === 'daily') {
-      saveTemplateField('goals', value);
-    } else if (goalTab === 'weekly') {
-      savePeriodGoals(weekKey, 'weekly', value);
-    } else {
-      savePeriodGoals(monthKey, 'monthly', value);
-    }
+    if (goalTab === 'weekly') savePeriodGoals(weekKey, 'weekly', value);
+    else savePeriodGoals(monthKey, 'monthly', value);
+  };
+
+  const normalizeGoalsText = (text: string): string => {
+    return text.split('\n').map(line => {
+      if (!line.trim()) return line;
+      if (/^- \[[ x]\] /.test(line)) return line;
+      return `- [ ] ${line.replace(/^[-*]\s*/, '')}`;
+    }).join('\n');
   };
 
   const handleGoalsChange = (value: string) => {
     const finalValue = value || null;
     setActiveGoals(finalValue);
-    if (goalTab === 'daily') {
-      if (templateTimers.current.goals) clearTimeout(templateTimers.current.goals);
-      templateTimers.current.goals = setTimeout(() => saveTemplateField('goals', finalValue), 1500);
-    } else {
-      const timerKey = goalTab;
-      if (periodTimers.current[timerKey]) clearTimeout(periodTimers.current[timerKey]);
-      periodTimers.current[timerKey] = setTimeout(() => {
-        if (goalTab === 'weekly') savePeriodGoals(weekKey, 'weekly', finalValue);
-        else savePeriodGoals(monthKey, 'monthly', finalValue);
-      }, 1500);
-    }
+    const timerKey = goalTab;
+    if (periodTimers.current[timerKey]) clearTimeout(periodTimers.current[timerKey]);
+    periodTimers.current[timerKey] = setTimeout(() => {
+      if (goalTab === 'weekly') savePeriodGoals(weekKey, 'weekly', finalValue);
+      else savePeriodGoals(monthKey, 'monthly', finalValue);
+    }, 1500);
   };
 
   const handleGoalsBlur = () => {
     const currentValue = getActiveGoals();
-    // Clear the relevant timer
-    if (goalTab === 'daily') {
-      if (templateTimers.current.goals) {
-        clearTimeout(templateTimers.current.goals);
-        delete templateTimers.current.goals;
-      }
-    } else {
-      if (periodTimers.current[goalTab]) {
-        clearTimeout(periodTimers.current[goalTab]);
-        delete periodTimers.current[goalTab];
-      }
+    if (periodTimers.current[goalTab]) {
+      clearTimeout(periodTimers.current[goalTab]);
+      delete periodTimers.current[goalTab];
     }
-
     if (!currentValue?.trim()) {
       setActiveGoals(null);
       saveActiveGoals(null);
@@ -251,7 +217,7 @@ export default function DaySummary({ dateCst }: Props) {
       setActiveGoals(normalized);
       saveActiveGoals(normalized);
     }
-    setEditingSection(null);
+    setEditingGoals(false);
   };
 
   const handleGoalToggle = (lineIndex: number) => {
@@ -266,32 +232,6 @@ export default function DaySummary({ dateCst }: Props) {
     const updated = lines.join('\n');
     setActiveGoals(updated);
     saveActiveGoals(updated);
-  };
-
-  const handleGoalPush = async (lineIndex: number) => {
-    const value = goals || '';
-    const lines = value.split('\n');
-    const line = lines[lineIndex];
-    if (!line?.trim()) return;
-
-    const text = line.replace(/^- \[[ x]\] /, '');
-    const nextDateCst = format(addDays(new Date(dateCst + 'T12:00:00'), 1), 'yyyy-MM-dd');
-
-    try {
-      const nextDay = await daySummaryService.get(nextDateCst);
-      const nextGoals = nextDay.goals
-        ? nextDay.goals + '\n' + `- [ ] ${text}`
-        : `- [ ] ${text}`;
-      await daySummaryService.save(nextDateCst, { goals: nextGoals });
-    } catch {
-      await daySummaryService.save(nextDateCst, { goals: `- [ ] ${text}` });
-    }
-
-    lines.splice(lineIndex, 1);
-    const updated = lines.join('\n') || null;
-    setGoals(updated);
-    fieldStateRef.current.goals = updated;
-    saveTemplateField('goals', updated);
   };
 
   // --- Summary item handlers ---
@@ -346,33 +286,23 @@ export default function DaySummary({ dateCst }: Props) {
 
   // --- Drag and drop reorder ---
 
-  const handleDragStart = (id: string) => {
-    dragItemRef.current = id;
-  };
-
+  const handleDragStart = (id: string) => { dragItemRef.current = id; };
   const handleDragOver = (e: React.DragEvent, id: string) => {
     e.preventDefault();
     setDragOverId(id);
   };
-
-  const handleDragLeave = () => {
-    setDragOverId(null);
-  };
-
+  const handleDragLeave = () => setDragOverId(null);
   const handleDrop = async (targetId: string) => {
     setDragOverId(null);
     const dragId = dragItemRef.current;
     if (!dragId || dragId === targetId) return;
-
     const newItems = [...items];
     const dragIndex = newItems.findIndex(i => i.id === dragId);
     const targetIndex = newItems.findIndex(i => i.id === targetId);
     if (dragIndex === -1 || targetIndex === -1) return;
-
     const [moved] = newItems.splice(dragIndex, 1);
     newItems.splice(targetIndex, 0, moved);
     setItems(newItems);
-
     try {
       await summaryItemService.reorder(dateCst, newItems.map(i => i.id));
     } catch { /* ignore */ }
@@ -381,10 +311,13 @@ export default function DaySummary({ dateCst }: Props) {
 
   if (!loaded) return null;
 
-  // If no template content and no items, show the "Add summary" button
+  // Empty-state branch: no template content, no items, no period goals.
+  // TasksBlock still renders so today's tasks remain visible.
   if (!showTemplate) {
     return (
       <div className={styles.container}>
+        <TasksBlock dateCst={dateCst} todayCst={todayCst} />
+        {hasArchive && renderArchive()}
         <button className={styles.addSummaryBtn} onClick={() => setShowTemplate(true)}>
           + Add summary
         </button>
@@ -392,12 +325,48 @@ export default function DaySummary({ dateCst }: Props) {
     );
   }
 
+  function renderArchive() {
+    return (
+      <div className={styles.archive}>
+        <button
+          type="button"
+          className={styles.archiveHeader}
+          onClick={() => setArchiveExpanded(e => !e)}
+          aria-expanded={archiveExpanded}
+        >
+          <span className={styles.archiveChevron}>{archiveExpanded ? '▾' : '▸'}</span>
+          <span>Pre-migration notes</span>
+          <span className={styles.archiveBadge}>read-only</span>
+        </button>
+        {archiveExpanded && (
+          <div className={styles.archiveBody}>
+            {goalsArchive && (
+              <div className={styles.archiveSection}>
+                <div className={styles.archiveLabel}>Goals</div>
+                <div className={styles.archiveContent}>
+                  <MarkdownLatex content={goalsArchive} />
+                </div>
+              </div>
+            )}
+            {progressArchive && (
+              <div className={styles.archiveSection}>
+                <div className={styles.archiveLabel}>Progress</div>
+                <div className={styles.archiveContent}>
+                  <MarkdownLatex content={progressArchive} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const renderGoalsContent = () => {
     const activeGoals = getActiveGoals();
-    const isEditing = editingSection === 'goals';
     const placeholder = GOAL_TAB_PLACEHOLDERS[goalTab];
 
-    if (isEditing) {
+    if (editingGoals) {
       return (
         <textarea
           className={styles.noteTextarea}
@@ -427,18 +396,9 @@ export default function DaySummary({ dateCst }: Props) {
                 >
                   {checked && <span className={styles.goalCheckmark}>&#10003;</span>}
                 </span>
-                <span className={styles.goalText} onClick={() => startEditingSection('goals')}>
+                <span className={styles.goalText} onClick={() => setEditingGoals(true)}>
                   <MarkdownLatex content={text} />
                 </span>
-                {goalTab === 'daily' && (
-                  <button
-                    className={styles.goalPushBtn}
-                    onClick={() => handleGoalPush(i)}
-                    title="Push to next day"
-                  >
-                    &#x21B7;
-                  </button>
-                )}
               </div>
             );
           })}
@@ -447,29 +407,51 @@ export default function DaySummary({ dateCst }: Props) {
     }
 
     return (
-      <div
-        className={styles.notePlaceholder}
-        onClick={() => startEditingSection('goals')}
-      >
+      <div className={styles.notePlaceholder} onClick={() => setEditingGoals(true)}>
         {placeholder}
+      </div>
+    );
+  };
+
+  const renderOpenQuestionsContent = () => {
+    if (editingOQ) {
+      return (
+        <textarea
+          className={styles.noteTextarea}
+          value={openQuestions || ''}
+          onChange={e => handleOQChange(e.target.value)}
+          onBlur={handleOQBlur}
+          placeholder={OPEN_QUESTIONS_PLACEHOLDER}
+          autoFocus
+        />
+      );
+    }
+    if (openQuestions) {
+      return (
+        <div className={styles.noteContent} onClick={() => setEditingOQ(true)}>
+          <MarkdownLatex content={openQuestions} />
+        </div>
+      );
+    }
+    return (
+      <div className={styles.notePlaceholder} onClick={() => setEditingOQ(true)}>
+        {OPEN_QUESTIONS_PLACEHOLDER}
       </div>
     );
   };
 
   return (
     <div className={styles.container}>
-      {/* Goals & Progress post-it notes */}
       <div className={styles.noteGrid}>
-        {/* Goals note with tabs */}
         <div className={styles.note}>
           <div className={styles.noteLabel}>
             <span>Goals</span>
             <div className={styles.goalTabs}>
-              {(['daily', 'weekly', 'monthly'] as GoalTab[]).map(tab => (
+              {(['weekly', 'monthly'] as GoalTab[]).map(tab => (
                 <button
                   key={tab}
                   className={`${styles.goalTab} ${goalTab === tab ? styles.goalTabActive : ''}`}
-                  onClick={() => { setGoalTab(tab); setEditingSection(null); }}
+                  onClick={() => { setGoalTab(tab); setEditingGoals(false); }}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </button>
@@ -481,44 +463,18 @@ export default function DaySummary({ dateCst }: Props) {
           </div>
         </div>
 
-        {/* Progress note */}
-        {SECTIONS.filter(s => s.key === 'progress').map(({ key, label, placeholder }) => {
-          const value = fieldState[key];
-          const isEditing = editingSection === key;
-
-          return (
-            <div key={key} className={styles.note}>
-              <div className={styles.noteLabel}>{label}</div>
-              <div className={styles.noteRuled}>
-                {isEditing ? (
-                  <textarea
-                    className={styles.noteTextarea}
-                    value={value || ''}
-                    onChange={e => handleTemplateChange(key, e.target.value)}
-                    onBlur={() => handleSectionBlur(key)}
-                    placeholder={placeholder}
-                    autoFocus
-                  />
-                ) : value ? (
-                  <div
-                    className={styles.noteContent}
-                    onClick={() => startEditingSection(key)}
-                  >
-                    <MarkdownLatex content={value} />
-                  </div>
-                ) : (
-                  <div
-                    className={styles.notePlaceholder}
-                    onClick={() => startEditingSection(key)}
-                  >
-                    {placeholder}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        <div className={styles.note}>
+          <div className={styles.noteLabel}>Open Questions</div>
+          <div className={styles.noteRuled}>
+            {renderOpenQuestionsContent()}
+          </div>
+        </div>
       </div>
+
+      {/* Tasks block — between the structured template and summary items */}
+      <TasksBlock dateCst={dateCst} todayCst={todayCst} />
+
+      {hasArchive && renderArchive()}
 
       {/* Summary items */}
       {items.length > 0 && (

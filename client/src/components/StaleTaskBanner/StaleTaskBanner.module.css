@@ -1,0 +1,44 @@
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  background: var(--color-state-in-progress-bg);
+  border-bottom: 1px solid var(--color-border);
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+.message {
+  flex: 1;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.actionBtn {
+  padding: 0.1rem 0.5rem;
+  font-size: 0.72rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.actionBtn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.actionDanger:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}

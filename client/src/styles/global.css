@@ -29,6 +29,18 @@
   --color-priority-medium: var(--color-warning);
   --color-priority-low: var(--color-info);
 
+  --color-state-planned: var(--color-info);
+  --color-state-in-progress: var(--color-warning);
+  --color-state-done: var(--color-success);
+  --color-state-blocked: var(--color-danger);
+  --color-state-abandoned: var(--color-text-muted);
+
+  --color-state-planned-bg: rgba(59, 130, 246, 0.12);
+  --color-state-in-progress-bg: rgba(245, 158, 11, 0.16);
+  --color-state-done-bg: rgba(16, 185, 129, 0.14);
+  --color-state-blocked-bg: rgba(239, 68, 68, 0.13);
+  --color-state-abandoned-bg: rgba(134, 142, 150, 0.13);
+
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -66,6 +78,18 @@
   --color-priority-high: var(--color-danger);
   --color-priority-medium: var(--color-warning);
   --color-priority-low: var(--color-info);
+
+  --color-state-planned: var(--color-info);
+  --color-state-in-progress: var(--color-warning);
+  --color-state-done: var(--color-success);
+  --color-state-blocked: var(--color-danger);
+  --color-state-abandoned: var(--color-text-muted);
+
+  --color-state-planned-bg: rgba(96, 165, 250, 0.18);
+  --color-state-in-progress-bg: rgba(251, 191, 36, 0.18);
+  --color-state-done-bg: rgba(52, 211, 153, 0.18);
+  --color-state-blocked-bg: rgba(248, 113, 113, 0.18);
+  --color-state-abandoned-bg: rgba(113, 128, 150, 0.18);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);

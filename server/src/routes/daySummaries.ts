@@ -32,42 +32,30 @@ router.get('/:date_cst', (req: Request, res: Response) => {
   }
 });
 
-// PUT /:date_cst — upsert template fields (goals, progress, open_questions)
+// PUT /:date_cst — upsert open_questions on the structured template.
+// goals/progress are migrated to the tasks table; we silently ignore them on
+// write so stale clients don't error, but we no longer persist them.
 router.put('/:date_cst', (req: Request, res: Response) => {
   try {
     const { date_cst } = req.params;
-    const { goals, progress, open_questions } = req.body;
+    const { open_questions } = req.body;
     const now = new Date().toISOString();
+
+    if ('goals' in req.body || 'progress' in req.body) {
+      console.warn(`[day-summaries] Ignored deprecated goals/progress fields for ${date_cst}`);
+    }
 
     const existing = db.prepare('SELECT date_cst FROM day_summaries WHERE date_cst = ?').get(date_cst);
 
     if (existing) {
-      // Only update fields that are provided in the request body
-      const updates: string[] = [];
-      const params: unknown[] = [];
-
-      if ('goals' in req.body) {
-        updates.push('goals = ?');
-        params.push(goals ?? null);
-      }
-      if ('progress' in req.body) {
-        updates.push('progress = ?');
-        params.push(progress ?? null);
-      }
       if ('open_questions' in req.body) {
-        updates.push('open_questions = ?');
-        params.push(open_questions ?? null);
+        db.prepare('UPDATE day_summaries SET open_questions = ?, updated_at = ? WHERE date_cst = ?')
+          .run(open_questions ?? null, now, date_cst);
       }
-
-      if (updates.length > 0) {
-        updates.push('updated_at = ?');
-        params.push(now, date_cst);
-        db.prepare(`UPDATE day_summaries SET ${updates.join(', ')} WHERE date_cst = ?`).run(...params);
-      }
-    } else {
+    } else if ('open_questions' in req.body) {
       db.prepare(
-        'INSERT INTO day_summaries (date_cst, goals, progress, open_questions, updated_at) VALUES (?, ?, ?, ?, ?)'
-      ).run(date_cst, goals ?? null, progress ?? null, open_questions ?? null, now);
+        'INSERT INTO day_summaries (date_cst, goals, progress, open_questions, updated_at) VALUES (?, NULL, NULL, ?, ?)'
+      ).run(date_cst, open_questions ?? null, now);
     }
 
     const row = db.prepare(

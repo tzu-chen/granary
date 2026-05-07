@@ -19,6 +19,7 @@ export default function LogPage() {
   const [heatmapData, setHeatmapData] = useState<HeatmapEntry[]>([]);
 
   const dateCst = format(date, 'yyyy-MM-dd');
+  const todayCst = format(new Date(), 'yyyy-MM-dd');
 
   const currentStreak = useMemo(() => {
     const countMap: Record<string, number> = {};
@@ -98,7 +99,7 @@ export default function LogPage() {
 
         <div className={styles.rightColumn}>
           <DateNavigator date={date} onChange={setDate} />
-          <DaySummary dateCst={dateCst} />
+          <DaySummary dateCst={dateCst} todayCst={todayCst} />
           <div className={styles.formSection}>
             <h3 className={styles.formTitle}>New Entry</h3>
             <EntryForm onSubmit={handleCreate} />

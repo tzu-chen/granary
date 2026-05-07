@@ -1,0 +1,173 @@
+.task {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+  transition: border-color 0.15s, opacity 0.2s;
+  overflow: hidden;
+}
+
+.task:hover {
+  border-color: var(--color-text-muted);
+}
+
+.dragOver {
+  border-color: var(--color-accent);
+  border-style: dashed;
+}
+
+.taskDone {
+  opacity: 0.7;
+}
+
+.taskAbandoned {
+  opacity: 0.55;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.dragHandle {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  cursor: grab;
+  letter-spacing: -2px;
+  flex-shrink: 0;
+  opacity: 0.4;
+}
+
+.dragHandle:hover {
+  opacity: 1;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titleStruck {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.titleInput {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.45rem;
+}
+
+.titleInput:focus {
+  outline: none;
+}
+
+.reasonChip {
+  font-size: 0.72rem;
+  font-style: italic;
+  color: var(--color-text-muted);
+  background: var(--color-bg-tertiary);
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notesToggle {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  padding: 0 0.25rem;
+  cursor: pointer;
+  transition: transform 0.15s;
+  line-height: 1;
+}
+
+.notesToggle:hover {
+  color: var(--color-accent);
+}
+
+.notesToggleOpen {
+  transform: rotate(180deg);
+}
+
+.deleteBtn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.task:hover .deleteBtn {
+  opacity: 1;
+}
+
+.deleteBtn:hover {
+  color: var(--color-danger);
+}
+
+.notesArea {
+  padding: 0.1rem 0.6rem 0.5rem;
+  padding-left: 0.6rem;
+  border-top: 1px dashed var(--color-border);
+}
+
+.notesTextarea {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  resize: vertical;
+  font-family: inherit;
+  margin-top: 0.4rem;
+}
+
+.notesTextarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.notesContent {
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  padding: 0.35rem 0.1rem;
+}
+
+.notesContent:hover {
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-sm);
+}
+
+.notesPlaceholder {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: 0.82rem;
+}

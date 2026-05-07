@@ -1,0 +1,175 @@
+.wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1.4;
+  transition: filter 0.15s, border-color 0.15s;
+}
+
+.tag:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+.tagStatic {
+  cursor: default;
+}
+
+.sm .tag {
+  padding: 0.08rem 0.45rem;
+  font-size: 0.65rem;
+}
+
+.dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  display: inline-block;
+  background: currentColor;
+}
+
+.label {
+  display: inline-block;
+}
+
+.state_planned {
+  color: var(--color-state-planned);
+  background: var(--color-state-planned-bg);
+}
+.state_in_progress {
+  color: var(--color-state-in-progress);
+  background: var(--color-state-in-progress-bg);
+}
+.state_done {
+  color: var(--color-state-done);
+  background: var(--color-state-done-bg);
+}
+.state_blocked {
+  color: var(--color-state-blocked);
+  background: var(--color-state-blocked-bg);
+}
+.state_abandoned {
+  color: var(--color-state-abandoned);
+  background: var(--color-state-abandoned-bg);
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 11rem;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 0.3rem;
+}
+
+.options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.optionRow {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.25rem 0.4rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.optionRow:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.optionRowActive {
+  background: var(--color-bg-tertiary);
+}
+
+.optionPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.reasonForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 14rem;
+  padding: 0.2rem;
+}
+
+.reasonHeader {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.reasonInput {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+}
+
+.reasonInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.reasonActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.skipBtn,
+.saveBtn {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-secondary);
+}
+
+.saveBtn {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+  font-weight: 500;
+}
+
+.saveBtn:hover {
+  background: var(--color-accent-hover);
+}

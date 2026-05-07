@@ -531,3 +531,84 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Archive — read-only legacy goals/progress on past days */
+.archive {
+  margin-top: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+}
+
+.archiveHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.6rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-align: left;
+}
+
+.archiveHeader:hover {
+  background: var(--color-bg-tertiary);
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
+
+.archiveChevron {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.archiveBadge {
+  margin-left: auto;
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.archiveBody {
+  padding: 0.3rem 0.7rem 0.7rem;
+  border-top: 1px dashed var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.archiveSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.archiveLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.archiveContent {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.archiveContent p,
+.archiveContent ul,
+.archiveContent ol,
+.archiveContent blockquote {
+  margin: 0;
+}
