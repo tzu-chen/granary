@@ -170,3 +170,41 @@
   font-style: italic;
   font-size: 0.82rem;
 }
+
+@media (max-width: 600px) {
+  .row {
+    flex-wrap: wrap;
+    row-gap: 0.4rem;
+  }
+
+  .title,
+  .titleInput {
+    flex-basis: 100%;
+    order: 10;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+  }
+
+  .reasonChip {
+    flex-basis: 100%;
+    max-width: 100%;
+    order: 11;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+
+  .notesToggle {
+    order: 5;
+    margin-left: auto;
+  }
+
+  .deleteBtn {
+    order: 6;
+    opacity: 1;
+  }
+}
