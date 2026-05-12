@@ -102,6 +102,20 @@ export function initializeDatabase(): void {
       value TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS documents (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      tags TEXT NOT NULL DEFAULT '[]',
+      source TEXT,
+      links TEXT NOT NULL DEFAULT '[]',
+      open_todo_count INTEGER NOT NULL DEFAULT 0,
+      total_todo_count INTEGER NOT NULL DEFAULT 0,
+      imported_from TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS tasks (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -134,6 +148,33 @@ export function initializeDatabase(): void {
     CREATE INDEX IF NOT EXISTS idx_tasks_created_on ON tasks(created_on);
     CREATE INDEX IF NOT EXISTS idx_tasks_completed_on ON tasks(completed_on);
     CREATE INDEX IF NOT EXISTS idx_tasks_state_position ON tasks(state, position);
+
+    CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents(created_at);
+    CREATE INDEX IF NOT EXISTS idx_documents_updated_at ON documents(updated_at);
+    CREATE INDEX IF NOT EXISTS idx_documents_open_todos ON documents(open_todo_count);
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
+      title, content, source, tags,
+      content='documents',
+      content_rowid='rowid'
+    );
+
+    CREATE TRIGGER IF NOT EXISTS documents_ai AFTER INSERT ON documents BEGIN
+      INSERT INTO documents_fts(rowid, title, content, source, tags)
+      VALUES (NEW.rowid, NEW.title, NEW.content, NEW.source, NEW.tags);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS documents_ad AFTER DELETE ON documents BEGIN
+      INSERT INTO documents_fts(documents_fts, rowid, title, content, source, tags)
+      VALUES ('delete', OLD.rowid, OLD.title, OLD.content, OLD.source, OLD.tags);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS documents_au AFTER UPDATE ON documents BEGIN
+      INSERT INTO documents_fts(documents_fts, rowid, title, content, source, tags)
+      VALUES ('delete', OLD.rowid, OLD.title, OLD.content, OLD.source, OLD.tags);
+      INSERT INTO documents_fts(rowid, title, content, source, tags)
+      VALUES (NEW.rowid, NEW.title, NEW.content, NEW.source, NEW.tags);
+    END;
   `);
 
   // Migration: add kind column to tasks for existing DBs (CHECK constraint omitted on ALTER;

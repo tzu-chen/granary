@@ -13,6 +13,7 @@ import healthRouter from './routes/health';
 import scribeRouter from './routes/scribe';
 import sourcesRouter from './routes/sources';
 import tasksRouter from './routes/tasks';
+import documentsRouter from './routes/documents';
 
 const app = express();
 const PORT = process.env.PORT || 3009;
@@ -31,6 +32,7 @@ app.use('/api/health', healthRouter);
 app.use('/api/scribe/books', scribeRouter);
 app.use('/api/sources', sourcesRouter);
 app.use('/api/tasks', tasksRouter);
+app.use('/api/documents', documentsRouter);
 
 // Serve static frontend in production
 const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');

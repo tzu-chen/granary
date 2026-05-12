@@ -19,19 +19,19 @@
 .toggle {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   background: var(--color-bg-tertiary);
   border-radius: 8px;
   padding: 3px;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12);
-  width: 150px;
+  width: 240px;
 }
 
 .slider {
   position: absolute;
   top: 3px;
   left: 3px;
-  width: calc(50% - 3px);
+  width: calc(33.333% - 2px);
   height: calc(100% - 6px);
   background: var(--color-bg-primary);
   border-radius: 6px;
@@ -41,6 +41,10 @@
 
 .slider[data-active='entries'] {
   transform: translateX(100%);
+}
+
+.slider[data-active='library'] {
+  transform: translateX(200%);
 }
 
 .toggleOption {

@@ -1,4 +1,4 @@
-import { Entry, EntryWithResolution, DaySummary, SummaryItem, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority, ScribeBook, Task, TaskState, TaskKind } from '../types';
+import { Entry, EntryWithResolution, DaySummary, SummaryItem, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority, ScribeBook, Task, TaskState, TaskKind, Document, DocumentStats, DocumentFilters } from '../types';
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`/api${path}`, {
@@ -135,6 +135,41 @@ export const taskService = {
     request<Task>('PATCH', `/tasks/${id}/state`, { state, reason }),
   reorder: (ids: string[]) => request<{ success: boolean }>('PATCH', '/tasks/reorder', { ids }),
   delete: (id: string) => request<{ success: boolean }>('DELETE', `/tasks/${id}`),
+};
+
+export const documentService = {
+  list: (filters?: DocumentFilters) => {
+    const params = new URLSearchParams();
+    if (filters?.search) params.set('search', filters.search);
+    if (filters?.tag) params.set('tag', filters.tag);
+    if (filters?.source) params.set('source', filters.source);
+    if (filters?.start) params.set('start', filters.start);
+    if (filters?.end) params.set('end', filters.end);
+    if (filters?.has_open_todos !== undefined) params.set('has_open_todos', String(filters.has_open_todos));
+    const qs = params.toString() ? `?${params}` : '';
+    return request<Document[]>('GET', `/documents${qs}`);
+  },
+  get: (id: string) => request<Document>('GET', `/documents/${id}`),
+  create: (data: { title: string; content: string; tags?: string[]; source?: string | null }) =>
+    request<Document>('POST', '/documents', data),
+  update: (id: string, data: { title: string; content: string; tags?: string[]; source?: string | null }) =>
+    request<Document>('PUT', `/documents/${id}`, data),
+  delete: (id: string) => request<{ success: boolean }>('DELETE', `/documents/${id}`),
+  stats: () => request<DocumentStats>('GET', '/documents/stats'),
+  importPaste: (data: { title: string; content: string; tags?: string[]; source?: string }) =>
+    request<Document[]>('POST', '/documents/import', data),
+  importFiles: async (files: File[], titles?: (string | null)[]): Promise<Document[]> => {
+    const form = new FormData();
+    for (const file of files) form.append('files', file);
+    if (titles) form.append('titles', JSON.stringify(titles));
+    const response = await fetch('/api/documents/import', { method: 'POST', body: form });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Import failed' }));
+      throw new Error(error.error || 'Import failed');
+    }
+    return response.json();
+  },
+  exportUrl: (id: string) => `/api/documents/${id}/export`,
 };
 
 export const settingsService = {

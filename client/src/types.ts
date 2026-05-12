@@ -191,3 +191,70 @@ export const TASK_KINDS: { value: TaskKind; label: string }[] = [
   { value: 'task', label: 'Task' },
   { value: 'question', label: 'Question' },
 ];
+
+export interface DocumentLink {
+  app: string;
+  ref_type: string;
+  ref_id: string;
+  label?: string;
+}
+
+export interface Document {
+  id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  source?: string | null;
+  links: DocumentLink[];
+  open_todo_count: number;
+  total_todo_count: number;
+  imported_from?: string | null;
+  created_at: string;
+  updated_at: string;
+  snippet?: string;
+}
+
+export interface DocumentStats {
+  total: number;
+  with_open_todos: number;
+  total_bytes: number;
+  by_tag: { tag: string; count: number }[];
+}
+
+export interface DocumentFilters {
+  search?: string;
+  tag?: string;
+  source?: string;
+  start?: string;
+  end?: string;
+  has_open_todos?: boolean;
+}
+
+export const CROSS_APP_OPTIONS: { app: string; label: string; refTypes: { value: string; label: string }[] }[] = [
+  {
+    app: 'granary',
+    label: 'Granary',
+    refTypes: [{ value: 'entry', label: 'Entry' }, { value: 'document', label: 'Document' }],
+  },
+  {
+    app: 'scribe',
+    label: 'Scribe',
+    refTypes: [
+      { value: 'note_id', label: 'Note' },
+      { value: 'flowchart_node', label: 'Flowchart node' },
+    ],
+  },
+  {
+    app: 'navigate',
+    label: 'Navigate',
+    refTypes: [
+      { value: 'arxiv_id', label: 'arXiv ID' },
+      { value: 'paper_id', label: 'Paper' },
+    ],
+  },
+  {
+    app: 'monolith',
+    label: 'Monolith',
+    refTypes: [{ value: 'project', label: 'Project' }],
+  },
+];

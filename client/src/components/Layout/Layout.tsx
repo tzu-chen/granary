@@ -7,17 +7,26 @@ interface Props {
   children: ReactNode;
 }
 
+type NavSection = 'log' | 'entries' | 'library';
+
+function getActiveSection(pathname: string): NavSection {
+  if (pathname.startsWith('/library')) return 'library';
+  if (pathname.startsWith('/entries')) return 'entries';
+  return 'log';
+}
+
 export default function Layout({ children }: Props) {
   const location = useLocation();
-  const isEntries = location.pathname.startsWith('/entries');
+  const active = getActiveSection(location.pathname);
 
   return (
     <div className={styles.layout}>
       <nav className={styles.nav}>
         <div className={styles.toggle}>
-          <div className={styles.slider} data-active={isEntries ? 'entries' : 'log'} />
-          <NavLink to="/" className={styles.toggleOption} data-active={!isEntries}>Log</NavLink>
-          <NavLink to="/entries" className={styles.toggleOption} data-active={isEntries}>Entries</NavLink>
+          <div className={styles.slider} data-active={active} />
+          <NavLink to="/" className={styles.toggleOption} data-active={active === 'log'}>Log</NavLink>
+          <NavLink to="/entries" className={styles.toggleOption} data-active={active === 'entries'}>Entries</NavLink>
+          <NavLink to="/library" className={styles.toggleOption} data-active={active === 'library'}>Library</NavLink>
         </div>
         <ThemeMenu />
       </nav>
