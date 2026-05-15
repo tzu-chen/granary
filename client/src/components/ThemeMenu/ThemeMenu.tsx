@@ -6,7 +6,7 @@ import { CloseIcon, PaletteIcon } from '../Icons/Icons';
 import styles from './ThemeMenu.module.css';
 
 export function ThemeMenu() {
-  const { schemeId, setScheme, fontSize, setFontSize } = useTheme();
+  const { schemeId, setScheme, fontSize, setFontSize, autoSwitch, setAutoSwitch } = useTheme();
   const [open, setOpen] = useState(false);
   const overlayMouseDownRef = useRef(false);
 
@@ -93,9 +93,24 @@ export function ThemeMenu() {
                       </div>
                     </div>
                     <span className={styles.cardName}>{scheme.name}</span>
-                    <span className={styles.cardType}>{scheme.type}</span>
                   </button>
                 ))}
+              </div>
+
+              <div className={styles.row}>
+                <div className={styles.rowInfo}>
+                  <span className={styles.rowLabel}>Auto switch</span>
+                  <span className={styles.rowDesc}>Light theme by day, dark by night</span>
+                </div>
+                <button
+                  className={`${styles.toggle} ${autoSwitch.enabled ? styles.toggleOn : ''}`}
+                  onClick={() => setAutoSwitch({ ...autoSwitch, enabled: !autoSwitch.enabled })}
+                  role="switch"
+                  aria-checked={autoSwitch.enabled}
+                  aria-label="Auto theme switching"
+                >
+                  <span className={styles.toggleThumb} />
+                </button>
               </div>
 
               <div className={styles.fontSizeSection}>
