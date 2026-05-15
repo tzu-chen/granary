@@ -1,6 +1,35 @@
 .content {
-  line-height: 1.5;
+  font-family: 'DejaVu Sans Mono', 'Menlo', 'Consolas', 'Courier New', monospace;
+  line-height: 1.25;
   word-wrap: break-word;
+}
+
+.content :global(.md-line) {
+  position: relative;
+  padding-left: 3.2em;
+  min-height: 1.25em;
+}
+
+.content :global(.md-line)::before {
+  content: attr(data-line);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2.4em;
+  text-align: right;
+  color: var(--color-text-muted);
+  font-size: 0.78em;
+  font-family: 'DejaVu Sans Mono', 'Menlo', 'Consolas', 'Courier New', monospace;
+  opacity: 0.55;
+  user-select: none;
+  padding-top: 0.18em;
+}
+
+/* Math (KaTeX) keeps its own font — KaTeX's stylesheet already enforces this,
+   but make it explicit for any spans we generate around math. */
+.content :global(.katex),
+.content :global(.katex-display) {
+  font-family: 'KaTeX_Main', 'Times New Roman', serif;
 }
 
 .content :global(h1) {

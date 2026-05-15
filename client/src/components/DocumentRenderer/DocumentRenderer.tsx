@@ -98,7 +98,12 @@ function processContent(content: string): string {
   result = result.replace(/^### (.+)$/gm, '<h3>$1</h3>');
   result = result.replace(/^## (.+)$/gm, '<h2>$1</h2>');
   result = result.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-  result = result.replace(/\n/g, '<br />');
+
+  // Phase 6.5: Wrap each line in a numbered container (line gutter)
+  const lines = result.split('\n');
+  result = lines
+    .map((line, i) => `<div class="md-line" data-line="${i + 1}">${line || '<br />'}</div>`)
+    .join('');
 
   // Phase 7: Restore placeholders
   placeholders.forEach((html, key) => {
