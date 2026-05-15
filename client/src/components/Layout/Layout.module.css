@@ -7,7 +7,7 @@
 .nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 2px;
   padding: 0.35rem 1.5rem;
   background: var(--color-bg-secondary);
   border-bottom: 1px solid var(--color-border);
@@ -16,53 +16,36 @@
   z-index: 100;
 }
 
-.toggle {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  background: var(--color-bg-tertiary);
-  border-radius: 8px;
-  padding: 3px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12);
-  width: 240px;
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--transition), background var(--transition);
 }
 
-.slider {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: calc(33.333% - 2px);
-  height: calc(100% - 6px);
-  background: var(--color-bg-primary);
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
-}
-
-.slider[data-active='entries'] {
-  transform: translateX(100%);
-}
-
-.slider[data-active='library'] {
-  transform: translateX(200%);
-}
-
-.toggleOption {
-  position: relative;
-  z-index: 1;
-  padding: 0.3rem 0;
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  user-select: none;
-  transition: color 0.2s ease;
-  text-align: center;
-}
-
-.toggleOption[data-active='true'] {
+.navLink:hover {
   color: var(--color-text-primary);
-  font-weight: 600;
+  background: var(--color-bg-tertiary);
+  text-decoration: none;
+}
+
+.navLinkActive {
+  color: var(--color-bg-primary);
+  background: var(--color-accent);
+}
+
+.navLinkActive:hover {
+  color: var(--color-bg-primary);
+  background: var(--color-accent-hover);
+}
+
+.navSpacer {
+  flex: 1;
 }
 
 .main {

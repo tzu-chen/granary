@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ThemeMenu } from '../ThemeMenu/ThemeMenu';
+import { LogIcon, EntriesIcon, LibraryIcon } from '../Icons/Icons';
 import styles from './Layout.module.css';
 
 interface Props {
@@ -18,16 +19,36 @@ function getActiveSection(pathname: string): NavSection {
 export default function Layout({ children }: Props) {
   const location = useLocation();
   const active = getActiveSection(location.pathname);
+  const iconSize = 18;
 
   return (
     <div className={styles.layout}>
       <nav className={styles.nav}>
-        <div className={styles.toggle}>
-          <div className={styles.slider} data-active={active} />
-          <NavLink to="/" className={styles.toggleOption} data-active={active === 'log'}>Log</NavLink>
-          <NavLink to="/entries" className={styles.toggleOption} data-active={active === 'entries'}>Entries</NavLink>
-          <NavLink to="/library" className={styles.toggleOption} data-active={active === 'library'}>Library</NavLink>
-        </div>
+        <NavLink
+          to="/"
+          className={`${styles.navLink} ${active === 'log' ? styles.navLinkActive : ''}`}
+          aria-label="Log"
+          title="Log"
+        >
+          <LogIcon size={iconSize} />
+        </NavLink>
+        <NavLink
+          to="/entries"
+          className={`${styles.navLink} ${active === 'entries' ? styles.navLinkActive : ''}`}
+          aria-label="Entries"
+          title="Entries"
+        >
+          <EntriesIcon size={iconSize} />
+        </NavLink>
+        <NavLink
+          to="/library"
+          className={`${styles.navLink} ${active === 'library' ? styles.navLinkActive : ''}`}
+          aria-label="Library"
+          title="Library"
+        >
+          <LibraryIcon size={iconSize} />
+        </NavLink>
+        <div className={styles.navSpacer} />
         <ThemeMenu />
       </nav>
       <main className={styles.main}>
