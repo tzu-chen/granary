@@ -68,9 +68,8 @@ export default function TaskItem({
     return () => { flushTitle(); flushNotes(); };
   }, [flushTitle, flushNotes]);
 
-  const isActive = task.state === 'planned' || task.state === 'in_progress' || task.state === 'blocked';
-  const daysOpen = isActive ? diffInDays(todayCst, task.created_on) : 0;
-  const showStaleBanner = isActive && daysOpen >= STALE_THRESHOLD_DAYS && !bannerDismissed;
+  const daysOpen = task.state === 'planned' ? diffInDays(todayCst, task.created_on) : 0;
+  const showStaleBanner = task.state === 'planned' && daysOpen >= STALE_THRESHOLD_DAYS && !bannerDismissed;
 
   const handleTitleChange = (value: string) => {
     setTitleDraft(value);
