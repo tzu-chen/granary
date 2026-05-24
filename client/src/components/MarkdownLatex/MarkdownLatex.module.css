@@ -9,10 +9,12 @@
 }
 
 .content code {
-  background: var(--color-bg-tertiary);
-  padding: 0.15em 0.35em;
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
+  padding: 0.15em 0.4em;
   border-radius: var(--radius-sm);
-  font-size: 0.9em;
+  font-size: 0.88em;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, Consolas, monospace;
 }
 
 .content pre {
@@ -25,10 +27,63 @@
 
 .content pre code {
   background: none;
+  color: inherit;
   padding: 0;
   font-size: 0.9em;
 }
 
 .content strong {
   font-weight: 600;
+}
+
+.content hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 1.5em 0;
+}
+
+.content ul {
+  list-style-type: disc;
+  list-style-position: outside;
+  padding-left: 1.6em;
+  margin: 0.5em 0;
+}
+
+.content li {
+  margin: 0.35em 0;
+  padding-left: 0.25em;
+}
+
+.content li::marker {
+  color: var(--color-text-secondary);
+}
+
+.content table {
+  border-collapse: collapse;
+  margin: 1em auto;
+  font-size: 0.95em;
+  max-width: 100%;
+}
+
+.content th,
+.content td {
+  padding: 0.85em 1.25em 0.85em 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.content th:not(:last-child),
+.content td:not(:last-child) {
+  padding-right: 1.5em;
+}
+
+.content thead th {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.content tbody tr:last-child td {
+  border-bottom: none;
 }

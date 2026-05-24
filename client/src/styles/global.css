@@ -25,6 +25,9 @@
   --color-entry-note: #6c757d;
   --color-entry-question: #e8590c;
 
+  --color-code-fg: #b32d3a;
+  --color-code-bg: rgba(201, 42, 42, 0.08);
+
   --color-priority-high: var(--color-danger);
   --color-priority-medium: var(--color-warning);
   --color-priority-low: var(--color-info);
@@ -82,6 +85,9 @@
 
   --color-entry-note: #7b88a1;
   --color-entry-question: #d08770;
+
+  --color-code-fg: #e8a5a0;
+  --color-code-bg: rgba(232, 165, 160, 0.12);
 
   --color-priority-high: var(--color-danger);
   --color-priority-medium: var(--color-warning);
@@ -145,4 +151,47 @@ input, textarea, select {
 .katex-display {
   margin: 0.8em 0;
   overflow-x: auto;
+}
+
+/* Shiki syntax-highlighted code blocks (global classes, not module-scoped). */
+pre.shiki {
+  margin: 0.75em 0;
+  padding: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  font-size: 0.9em;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, Consolas, monospace;
+  line-height: 1.55;
+  border: 1px solid var(--color-border);
+}
+
+pre.shiki code {
+  display: block;
+  background: none;
+  color: inherit;
+  padding: 0.9em 1.25em;
+  overflow-x: auto;
+}
+
+pre.shiki .line {
+  display: block;
+  min-height: 1.55em;
+}
+
+.code-block-lang {
+  display: block;
+  margin: 0;
+  padding: 0.5em 1.25em;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.22);
+  font-size: 0.75em;
+  color: #7d8590;
+  letter-spacing: 0.03em;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, Consolas, monospace;
+  user-select: none;
+}
+
+[data-theme="dark"] pre.shiki,
+[data-theme="dark"] pre.shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
 }
