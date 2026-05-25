@@ -113,6 +113,13 @@ export default function TasksBlock({ dateCst, todayCst }: Props) {
     } catch { /* ignore */ }
   };
 
+  const handleKeep = async (task: Task) => {
+    try {
+      const updated = await taskService.keep(task.id);
+      setTasks(prev => prev.map(t => t.id === task.id ? updated : t));
+    } catch { /* ignore */ }
+  };
+
   const handleDelete = async (task: Task) => {
     try {
       await taskService.delete(task.id);
@@ -214,6 +221,7 @@ export default function TasksBlock({ dateCst, todayCst }: Props) {
               todayCst={todayCst}
               onChange={patch => handleUpdate(task, patch)}
               onStateChange={(s, r) => handleStateChange(task, s, r)}
+              onKeep={() => handleKeep(task)}
               onDelete={() => handleDelete(task)}
               onDragStart={() => handleDragStart(task.id)}
               onDragOver={e => handleDragOver(e, task.id)}

@@ -204,6 +204,26 @@ router.patch('/:id/state', (req: Request, res: Response) => {
   }
 });
 
+// PATCH /:id/keep — snooze the stale-task banner for 7 days
+router.patch('/:id/keep', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const existing = db.prepare('SELECT id FROM tasks WHERE id = ?').get(id);
+    if (!existing) return res.status(404).json({ error: 'Task not found' });
+
+    const now = new Date().toISOString();
+    const keptUntil = getCSTDate(7);
+
+    db.prepare('UPDATE tasks SET kept_until = ?, updated_at = ? WHERE id = ?')
+      .run(keptUntil, now, id);
+
+    const row = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
+    res.json(row);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to keep task' });
+  }
+});
+
 // DELETE /:id
 router.delete('/:id', (req: Request, res: Response) => {
   try {

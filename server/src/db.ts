@@ -183,6 +183,9 @@ export function initializeDatabase(): void {
   try { db.exec("ALTER TABLE tasks ADD COLUMN kind TEXT NOT NULL DEFAULT 'task'"); } catch (_) { /* column exists */ }
   db.exec("CREATE INDEX IF NOT EXISTS idx_tasks_kind ON tasks(kind)");
 
+  // Migration: snooze date for the stale-task banner (YYYY-MM-DD in CST).
+  try { db.exec("ALTER TABLE tasks ADD COLUMN kept_until TEXT"); } catch (_) { /* column exists */ }
+
   // Migration: day_summaries — migrate from old single-content schema to structured template
   try {
     const hasGoals = db.prepare("SELECT goals FROM day_summaries LIMIT 0").columns();

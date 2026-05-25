@@ -133,6 +133,7 @@ export const taskService = {
     request<Task>('PUT', `/tasks/${id}`, data),
   setState: (id: string, state: TaskState, reason?: string) =>
     request<Task>('PATCH', `/tasks/${id}/state`, { state, reason }),
+  keep: (id: string) => request<Task>('PATCH', `/tasks/${id}/keep`),
   reorder: (ids: string[]) => request<{ success: boolean }>('PATCH', '/tasks/reorder', { ids }),
   delete: (id: string) => request<{ success: boolean }>('DELETE', `/tasks/${id}`),
 };

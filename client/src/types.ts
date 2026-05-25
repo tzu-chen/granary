@@ -173,6 +173,7 @@ export interface Task {
   state_reason: string | null;
   created_on: string;
   completed_on: string | null;
+  kept_until: string | null;
   position: number;
   created_at: string;
   updated_at: string;

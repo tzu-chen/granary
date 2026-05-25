@@ -11,6 +11,7 @@ interface Props {
   todayCst: string;
   onChange: (patch: { title?: string; notes?: string | null; kind?: TaskKind }) => void;
   onStateChange: (state: TaskState, reason?: string) => void;
+  onKeep: () => void;
   onDelete: () => void;
   onDragStart?: () => void;
   onDragOver?: (e: React.DragEvent) => void;
@@ -31,6 +32,7 @@ export default function TaskItem({
   todayCst,
   onChange,
   onStateChange,
+  onKeep,
   onDelete,
   onDragStart,
   onDragOver,
@@ -69,7 +71,12 @@ export default function TaskItem({
   }, [flushTitle, flushNotes]);
 
   const daysOpen = task.state === 'planned' ? diffInDays(todayCst, task.created_on) : 0;
-  const showStaleBanner = task.state === 'planned' && daysOpen >= STALE_THRESHOLD_DAYS && !bannerDismissed;
+  const snoozedByKeep = task.kept_until != null && todayCst <= task.kept_until;
+  const showStaleBanner =
+    task.state === 'planned' &&
+    daysOpen >= STALE_THRESHOLD_DAYS &&
+    !bannerDismissed &&
+    !snoozedByKeep;
 
   const handleTitleChange = (value: string) => {
     setTitleDraft(value);
@@ -134,7 +141,7 @@ export default function TaskItem({
       {showStaleBanner && (
         <StaleTaskBanner
           daysOpen={daysOpen}
-          onKeep={() => setBannerDismissed(true)}
+          onKeep={() => { setBannerDismissed(true); onKeep(); }}
           onRedefine={handleRedefine}
           onAbandon={handleAbandonFromBanner}
         />
