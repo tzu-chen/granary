@@ -12,6 +12,13 @@ export default function DocumentEditor({ value, onChange, placeholder }: Props) 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  // Current date in CST (UTC-6 fixed offset, same convention as elsewhere), short form.
+  // Braces are required for mm-dd to be styled by DocumentRenderer's date detection.
+  const insertCurrentDate = () => {
+    const cst = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(5, 10);
+    insertAtCursor(`{${cst}}`);
+  };
+
   const insertAtCursor = (text: string) => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -35,6 +42,13 @@ export default function DocumentEditor({ value, onChange, placeholder }: Props) 
           onClick={() => setPickerOpen(true)}
         >
           Insert link…
+        </button>
+        <button
+          type="button"
+          className={styles.toolBtn}
+          onClick={insertCurrentDate}
+        >
+          Insert date
         </button>
         <span className={styles.hint}>Markdown · LaTeX · {`[[app:type:id|label]]`}</span>
       </div>

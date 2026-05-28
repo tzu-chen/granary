@@ -97,6 +97,27 @@ function processContent(content: string): string {
     return ph(renderLatex(tex.trim(), false));
   });
 
+  // Phase 4.5: Dates → styled <time>. Two triggers:
+  //   • Explicit braces {yyyy-mm-dd} or {mm-dd} — unambiguous; the braces are stripped.
+  //   • Bare yyyy-mm-dd — safe enough to auto-detect (full ISO dates rarely collide).
+  // Bare mm-dd is NOT auto-detected (it collides with ranges/subtraction like "10-20");
+  // wrap it in braces to opt in. Runs after code/math extraction so it never touches
+  // `$…$` content, and emits a placeholder so later phases leave it alone.
+  const wrapDate = (raw: string): string => {
+    const parts = raw.split('-').map(Number);
+    const [mm, dd] = parts.length === 3 ? [parts[1], parts[2]] : [parts[0], parts[1]];
+    if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return raw; // not a real date
+    return ph(`<time>${escapeHtml(raw)}</time>`);
+  };
+  // Braced form first (covers both lengths); leave literal braces if the date is invalid.
+  result = result.replace(/\{(\d{4}-\d{2}-\d{2}|\d{2}-\d{2})\}/g, (m, d) => {
+    const out = wrapDate(d);
+    return out === d ? m : out;
+  });
+  // Bare yyyy-mm-dd only. Dash/digit guards avoid matching a fragment of a longer run
+  // (e.g. a date inside a URL path).
+  result = result.replace(/(?<![\/\d-])\d{4}-\d{2}-\d{2}(?![\/\d-])/g, (m) => wrapDate(m));
+
   // Phase 5: TODO list items (render as a styled list item with disabled checkbox)
   result = result.replace(/^(\s*)[-*+]\s+\[([ xX])\]\s+(.+)$/gm, (_m, indent, mark, text) => {
     const checked = mark === 'x' || mark === 'X';

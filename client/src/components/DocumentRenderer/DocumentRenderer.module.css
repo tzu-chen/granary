@@ -53,6 +53,14 @@
   line-height: 1.35;
 }
 
+.content :global(time) {
+  color: var(--color-info);
+  background: color-mix(in srgb, var(--color-info) 12%, transparent);
+  padding: 0.05em 0.35em;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
 .content :global(code) {
   background: var(--color-code-bg);
   color: var(--color-code-fg);
