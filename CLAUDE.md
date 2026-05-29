@@ -30,7 +30,9 @@ npm start                 # Start production server (serves API + built frontend
 
 **Port assignment:** Granary uses port **3009** (server) and **5174** (Vite dev) to avoid conflicts with Navigate (3001/5173), Scribe (3001/5173 — run one at a time), and Monolith (3001/5173). The Vite dev server proxies `/api` requests to `http://localhost:3009`.
 
-No `.env` files. The only server environment variable is `PORT` (defaults to 3009).
+No `.env` files. Server environment variables: `PORT` (defaults to 3009) and `SUITE_DATA_ROOT` (optional).
+
+**`SUITE_DATA_ROOT` (data location).** When set, `granary.db` lives at `$SUITE_DATA_ROOT/granary/`; when unset, it falls back **byte-for-byte** to the legacy in-repo location, which `server/src/db.ts` resolves (`__dirname/../../data`) to the repo-root **`data/`** directory — i.e. `granary/data/granary.db`, *not* `server/data/`. (The `.gitignore` line `server/data/` is stale; the DB has always lived at the repo-root `data/`.) Part of the suite data-centralization scheme.
 
 ---
 

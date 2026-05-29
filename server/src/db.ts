@@ -2,7 +2,12 @@ import Database, { Database as DatabaseType } from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const DATA_DIR = path.join(__dirname, '..', '..', 'data');
+// When SUITE_DATA_ROOT is set, share "$SUITE_DATA_ROOT/granary"; otherwise fall
+// back to the original in-repo location, copied verbatim.
+const DATA_DIR = process.env.SUITE_DATA_ROOT
+  ? path.join(process.env.SUITE_DATA_ROOT, 'granary')
+  : path.join(__dirname, '..', '..', 'data');
+console.log(`[granary] data dir: ${DATA_DIR}`);
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
