@@ -140,6 +140,11 @@
   font-weight: 600;
 }
 
+.content :global(del) {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
 .content :global(.cross-app-link) {
   display: inline-block;
   padding: 0.05em 0.35em;

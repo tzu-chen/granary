@@ -128,6 +128,7 @@ function processContent(content: string): string {
   // Phase 6: Other markdown formatting
   result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  result = result.replace(/~~(.+?)~~/g, '<del>$1</del>');
   result = result.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
     '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
   result = result.replace(/^### (.+)$/gm, '<h3>$1</h3>');
