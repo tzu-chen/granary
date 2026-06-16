@@ -82,7 +82,7 @@ export default function ReviewTab({ onCountsChange }: Props) {
       <div className={styles.progress}>
         Card {currentIndex + 1} of {cards.length}
       </div>
-      <ReviewCardDisplay card={cards[currentIndex]} onRate={handleRate} />
+      <ReviewCardDisplay key={cards[currentIndex].id} card={cards[currentIndex]} onRate={handleRate} />
     </div>
   );
 }
