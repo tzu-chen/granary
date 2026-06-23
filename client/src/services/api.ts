@@ -147,6 +147,7 @@ export const documentService = {
     if (filters?.start) params.set('start', filters.start);
     if (filters?.end) params.set('end', filters.end);
     if (filters?.has_open_todos !== undefined) params.set('has_open_todos', String(filters.has_open_todos));
+    if (filters?.archived) params.set('archived', 'true');
     const qs = params.toString() ? `?${params}` : '';
     return request<Document[]>('GET', `/documents${qs}`);
   },
@@ -156,6 +157,8 @@ export const documentService = {
   update: (id: string, data: { title: string; content: string; tags?: string[]; source?: string | null }) =>
     request<Document>('PUT', `/documents/${id}`, data),
   delete: (id: string) => request<{ success: boolean }>('DELETE', `/documents/${id}`),
+  setArchived: (id: string, archived: boolean) =>
+    request<Document>('PATCH', `/documents/${id}/archive`, { archived }),
   stats: () => request<DocumentStats>('GET', '/documents/stats'),
   importPaste: (data: { title: string; content: string; tags?: string[]; source?: string }) =>
     request<Document[]>('POST', '/documents/import', data),

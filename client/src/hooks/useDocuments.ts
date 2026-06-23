@@ -19,7 +19,7 @@ export function useDocuments(filters: DocumentFilters) {
       setLoading(false);
     }
     // Re-run whenever any filter value changes.
-  }, [filters.search, filters.tag, filters.source, filters.start, filters.end, filters.has_open_todos]);
+  }, [filters.search, filters.tag, filters.source, filters.start, filters.end, filters.has_open_todos, filters.archived]);
 
   useEffect(() => {
     refresh();

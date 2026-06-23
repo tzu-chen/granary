@@ -1,10 +1,14 @@
+import { MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Document } from '../../types';
+import { ArchiveIcon, ArchiveRestoreIcon } from '../Icons/Icons';
 import styles from './DocumentCard.module.css';
 
 interface Props {
   document: Document;
+  view?: 'card' | 'list';
+  onArchiveToggle?: (document: Document) => void;
 }
 
 function stripMarkdown(content: string, limit: number): string {
@@ -21,12 +25,31 @@ function stripMarkdown(content: string, limit: number): string {
   return text;
 }
 
-export default function DocumentCard({ document }: Props) {
+export default function DocumentCard({ document, view = 'card', onArchiveToggle }: Props) {
   const updated = formatDistanceToNow(new Date(document.updated_at), { addSuffix: true });
-  const snippet = document.snippet || stripMarkdown(document.content, 200);
+  const snippet = document.snippet || stripMarkdown(document.content, view === 'list' ? 140 : 200);
+
+  const handleArchive = (e: MouseEvent) => {
+    // The whole card is a link — stop the click from navigating.
+    e.preventDefault();
+    e.stopPropagation();
+    onArchiveToggle?.(document);
+  };
+
+  const archiveButton = onArchiveToggle && (
+    <button
+      type="button"
+      className={styles.archiveBtn}
+      onClick={handleArchive}
+      title={document.archived ? 'Unarchive' : 'Archive'}
+      aria-label={document.archived ? 'Unarchive' : 'Archive'}
+    >
+      {document.archived ? <ArchiveRestoreIcon size={15} /> : <ArchiveIcon size={15} />}
+    </button>
+  );
 
   return (
-    <Link to={`/library/${document.id}`} className={styles.card}>
+    <Link to={`/library/${document.id}`} className={`${styles.card} ${view === 'list' ? styles.listCard : ''}`}>
       <div className={styles.header}>
         <h3 className={styles.title}>{document.title}</h3>
         {document.open_todo_count > 0 && (
@@ -47,6 +70,7 @@ export default function DocumentCard({ document }: Props) {
           <span key={tag} className={styles.tag}>{tag}</span>
         ))}
         <span className={styles.updated}>{updated}</span>
+        {archiveButton}
       </div>
     </Link>
   );

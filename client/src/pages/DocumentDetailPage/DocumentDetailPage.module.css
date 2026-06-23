@@ -80,6 +80,18 @@
   font-family: 'SFMono-Regular', Consolas, monospace;
 }
 
+.archivedBadge {
+  padding: 0.05rem 0.5rem;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .actions {
   display: flex;
   gap: 0.4rem;

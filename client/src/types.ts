@@ -210,6 +210,7 @@ export interface Document {
   open_todo_count: number;
   total_todo_count: number;
   imported_from?: string | null;
+  archived: boolean;
   created_at: string;
   updated_at: string;
   snippet?: string;
@@ -217,6 +218,7 @@ export interface Document {
 
 export interface DocumentStats {
   total: number;
+  archived: number;
   with_open_todos: number;
   total_bytes: number;
   by_tag: { tag: string; count: number }[];
@@ -229,6 +231,7 @@ export interface DocumentFilters {
   start?: string;
   end?: string;
   has_open_todos?: boolean;
+  archived?: boolean;
 }
 
 export const CROSS_APP_OPTIONS: { app: string; label: string; refTypes: { value: string; label: string }[] }[] = [

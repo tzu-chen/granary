@@ -21,6 +21,7 @@ interface DocumentRow {
   open_todo_count: number;
   total_todo_count: number;
   imported_from: string | null;
+  archived: number;
   created_at: string;
   updated_at: string;
 }
@@ -30,16 +31,20 @@ function parseDocument(row: DocumentRow) {
     ...row,
     tags: JSON.parse(row.tags),
     links: JSON.parse(row.links),
+    archived: !!row.archived,
   };
 }
 
 router.get('/stats', (_req: Request, res: Response) => {
   try {
-    const total = (db.prepare('SELECT COUNT(*) as c FROM documents').get() as { c: number }).c;
-    const withOpenTodos = (db.prepare('SELECT COUNT(*) as c FROM documents WHERE open_todo_count > 0').get() as { c: number }).c;
-    const totalBytes = (db.prepare('SELECT COALESCE(SUM(LENGTH(content)), 0) as b FROM documents').get() as { b: number }).b;
+    // Stats describe the active (non-archived) library; archived docs are reported
+    // separately so the UI can surface a count without mixing them into totals.
+    const total = (db.prepare('SELECT COUNT(*) as c FROM documents WHERE archived = 0').get() as { c: number }).c;
+    const archived = (db.prepare('SELECT COUNT(*) as c FROM documents WHERE archived = 1').get() as { c: number }).c;
+    const withOpenTodos = (db.prepare('SELECT COUNT(*) as c FROM documents WHERE open_todo_count > 0 AND archived = 0').get() as { c: number }).c;
+    const totalBytes = (db.prepare('SELECT COALESCE(SUM(LENGTH(content)), 0) as b FROM documents WHERE archived = 0').get() as { b: number }).b;
 
-    const rows = db.prepare('SELECT tags FROM documents').all() as { tags: string }[];
+    const rows = db.prepare('SELECT tags FROM documents WHERE archived = 0').all() as { tags: string }[];
     const tagCounts: Record<string, number> = {};
     for (const row of rows) {
       const tags: string[] = JSON.parse(row.tags);
@@ -49,7 +54,7 @@ router.get('/stats', (_req: Request, res: Response) => {
       .map(([tag, count]) => ({ tag, count }))
       .sort((a, b) => b.count - a.count);
 
-    res.json({ total, with_open_todos: withOpenTodos, total_bytes: totalBytes, by_tag: byTag });
+    res.json({ total, archived, with_open_todos: withOpenTodos, total_bytes: totalBytes, by_tag: byTag });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch document stats' });
   }
@@ -95,6 +100,9 @@ router.get('/', (req: Request, res: Response) => {
     } else if (req.query.has_open_todos === 'false') {
       conditions.push("d.open_todo_count = 0");
     }
+    // Archived documents are hidden from the default view; only surfaced when
+    // explicitly requested via ?archived=true.
+    conditions.push(req.query.archived === 'true' ? "d.archived = 1" : "d.archived = 0");
 
     if (conditions.length > 0) {
       query += (search ? ' AND ' : ' WHERE ') + conditions.join(' AND ');
@@ -183,6 +191,25 @@ router.put('/:id', (req: Request, res: Response) => {
       now,
       req.params.id
     );
+
+    const row = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.id) as DocumentRow;
+    res.json(parseDocument(row));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update document' });
+  }
+});
+
+router.patch('/:id/archive', (req: Request, res: Response) => {
+  try {
+    const existing = db.prepare('SELECT id FROM documents WHERE id = ?').get(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Document not found' });
+
+    const { archived } = req.body;
+    if (typeof archived !== 'boolean') return res.status(400).json({ error: 'archived must be a boolean' });
+
+    const now = new Date().toISOString();
+    db.prepare('UPDATE documents SET archived = ?, updated_at = ? WHERE id = ?')
+      .run(archived ? 1 : 0, now, req.params.id);
 
     const row = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.id) as DocumentRow;
     res.json(parseDocument(row));

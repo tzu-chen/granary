@@ -117,6 +117,7 @@ export function initializeDatabase(): void {
       open_todo_count INTEGER NOT NULL DEFAULT 0,
       total_todo_count INTEGER NOT NULL DEFAULT 0,
       imported_from TEXT,
+      archived INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -190,6 +191,10 @@ export function initializeDatabase(): void {
 
   // Migration: snooze date for the stale-task banner (YYYY-MM-DD in CST).
   try { db.exec("ALTER TABLE tasks ADD COLUMN kept_until TEXT"); } catch (_) { /* column exists */ }
+
+  // Migration: archived flag for documents (hidden from the default library view).
+  try { db.exec("ALTER TABLE documents ADD COLUMN archived INTEGER NOT NULL DEFAULT 0"); } catch (_) { /* column exists */ }
+  db.exec("CREATE INDEX IF NOT EXISTS idx_documents_archived ON documents(archived)");
 
   // Migration: day_summaries — migrate from old single-content schema to structured template
   try {
