@@ -38,6 +38,7 @@ export function initializeDatabase(): void {
       goals TEXT,
       progress TEXT,
       open_questions TEXT,
+      scratch TEXT,
       updated_at TEXT NOT NULL
     );
 
@@ -231,6 +232,9 @@ export function initializeDatabase(): void {
       ALTER TABLE day_summaries_new RENAME TO day_summaries;
     `);
   } catch (_) { /* content column doesn't exist — already clean */ }
+
+  // Migration: freeform per-day scratch strip (plain text, nullable)
+  try { db.exec("ALTER TABLE day_summaries ADD COLUMN scratch TEXT"); } catch (_) { /* column already exists */ }
 
   // Migration: add status and priority columns to entries (for existing databases)
   try { db.exec("ALTER TABLE entries ADD COLUMN status TEXT DEFAULT NULL"); } catch (_) { /* column already exists */ }

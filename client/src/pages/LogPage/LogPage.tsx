@@ -4,6 +4,7 @@ import { Entry, HeatmapEntry } from '../../types';
 import { entryService, statsService } from '../../services/api';
 import DateNavigator from '../../components/DateNavigator/DateNavigator';
 import DaySummary from '../../components/DaySummary/DaySummary';
+import DayScratch from '../../components/DayScratch/DayScratch';
 import EntryCard from '../../components/EntryCard/EntryCard';
 import EntryForm from '../../components/EntryForm/EntryForm';
 import Heatmap from '../../components/Heatmap/Heatmap';
@@ -100,6 +101,7 @@ export default function LogPage() {
         <div className={styles.rightColumn}>
           <DateNavigator date={date} onChange={setDate} />
           <DaySummary dateCst={dateCst} todayCst={todayCst} />
+          <DayScratch dateCst={dateCst} />
           <div className={styles.formSection}>
             <h3 className={styles.formTitle}>New Entry</h3>
             <EntryForm onSubmit={handleCreate} />

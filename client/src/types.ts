@@ -46,6 +46,7 @@ export interface DaySummary {
   goals: string | null;
   progress: string | null;
   open_questions: string | null;
+  scratch: string | null;
   updated_at: string | null;
   items: SummaryItem[];
 }

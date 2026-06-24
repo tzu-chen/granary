@@ -8,8 +8,8 @@ router.get('/:date_cst', (req: Request, res: Response) => {
   try {
     const { date_cst } = req.params;
     const row = db.prepare(
-      'SELECT date_cst, goals, progress, open_questions, updated_at FROM day_summaries WHERE date_cst = ?'
-    ).get(date_cst) as { date_cst: string; goals: string | null; progress: string | null; open_questions: string | null; updated_at: string } | undefined;
+      'SELECT date_cst, goals, progress, open_questions, scratch, updated_at FROM day_summaries WHERE date_cst = ?'
+    ).get(date_cst) as { date_cst: string; goals: string | null; progress: string | null; open_questions: string | null; scratch: string | null; updated_at: string } | undefined;
 
     const items = db.prepare(
       'SELECT * FROM summary_items WHERE date_cst = ? ORDER BY position'
@@ -21,6 +21,7 @@ router.get('/:date_cst', (req: Request, res: Response) => {
         goals: null,
         progress: null,
         open_questions: null,
+        scratch: null,
         updated_at: null,
         items,
       });
@@ -32,34 +33,42 @@ router.get('/:date_cst', (req: Request, res: Response) => {
   }
 });
 
-// PUT /:date_cst — upsert open_questions on the structured template.
+// PUT /:date_cst — upsert editable template fields (open_questions, scratch).
 // goals/progress are migrated to the tasks table; we silently ignore them on
 // write so stale clients don't error, but we no longer persist them.
+const EDITABLE_FIELDS = ['open_questions', 'scratch'] as const;
+
 router.put('/:date_cst', (req: Request, res: Response) => {
   try {
     const { date_cst } = req.params;
-    const { open_questions } = req.body;
     const now = new Date().toISOString();
 
     if ('goals' in req.body || 'progress' in req.body) {
       console.warn(`[day-summaries] Ignored deprecated goals/progress fields for ${date_cst}`);
     }
 
-    const existing = db.prepare('SELECT date_cst FROM day_summaries WHERE date_cst = ?').get(date_cst);
+    // Field names come from a fixed whitelist (never user input), so embedding
+    // them in the SQL string is safe; values stay parameterized.
+    const provided = EDITABLE_FIELDS.filter(f => f in req.body);
 
-    if (existing) {
-      if ('open_questions' in req.body) {
-        db.prepare('UPDATE day_summaries SET open_questions = ?, updated_at = ? WHERE date_cst = ?')
-          .run(open_questions ?? null, now, date_cst);
+    if (provided.length > 0) {
+      const values = provided.map(f => req.body[f] ?? null);
+      const existing = db.prepare('SELECT date_cst FROM day_summaries WHERE date_cst = ?').get(date_cst);
+
+      if (existing) {
+        const setClause = provided.map(f => `${f} = ?`).join(', ');
+        db.prepare(`UPDATE day_summaries SET ${setClause}, updated_at = ? WHERE date_cst = ?`)
+          .run(...values, now, date_cst);
+      } else {
+        const columns = provided.join(', ');
+        const placeholders = provided.map(() => '?').join(', ');
+        db.prepare(`INSERT INTO day_summaries (date_cst, ${columns}, updated_at) VALUES (?, ${placeholders}, ?)`)
+          .run(date_cst, ...values, now);
       }
-    } else if ('open_questions' in req.body) {
-      db.prepare(
-        'INSERT INTO day_summaries (date_cst, goals, progress, open_questions, updated_at) VALUES (?, NULL, NULL, ?, ?)'
-      ).run(date_cst, open_questions ?? null, now);
     }
 
     const row = db.prepare(
-      'SELECT date_cst, goals, progress, open_questions, updated_at FROM day_summaries WHERE date_cst = ?'
+      'SELECT date_cst, goals, progress, open_questions, scratch, updated_at FROM day_summaries WHERE date_cst = ?'
     ).get(date_cst);
     res.json(row);
   } catch (error) {
