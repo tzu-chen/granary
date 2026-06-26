@@ -73,6 +73,7 @@ export default function TaskItem({
   const daysOpen = task.state === 'planned' ? diffInDays(todayCst, task.created_on) : 0;
   const snoozedByKeep = task.kept_until != null && todayCst <= task.kept_until;
   const showStaleBanner =
+    task.kind === 'task' &&
     task.state === 'planned' &&
     daysOpen >= STALE_THRESHOLD_DAYS &&
     !bannerDismissed &&
