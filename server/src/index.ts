@@ -16,7 +16,8 @@ import tasksRouter from './routes/tasks';
 import documentsRouter from './routes/documents';
 
 const app = express();
-const PORT = process.env.PORT || 3009;
+const PORT = parseInt(process.env.PORT || '3009', 10);
+const HOST = process.env.HOST || '127.0.0.1';
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -43,6 +44,6 @@ app.get('*', (_req, res) => {
 
 initializeDatabase();
 
-app.listen(PORT, () => {
-  console.log(`Granary server running on port ${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`Granary server running on ${HOST}:${PORT}`);
 });
