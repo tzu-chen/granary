@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout/Layout';
 import LogPage from './pages/LogPage/LogPage';
+import TimelinePage from './pages/TimelinePage/TimelinePage';
 import EntriesPage from './pages/EntriesPage/EntriesPage';
 import EntryDetailPage from './pages/EntryDetailPage/EntryDetailPage';
 import EntryEditPage from './pages/EntryEditPage/EntryEditPage';
@@ -13,6 +14,7 @@ export default function App() {
     <Layout>
       <Routes>
         <Route path="/" element={<LogPage />} />
+        <Route path="/timeline" element={<TimelinePage />} />
         <Route path="/entries" element={<EntriesPage />} />
         <Route path="/entries/:id" element={<EntryDetailPage />} />
         <Route path="/entries/:id/edit" element={<EntryEditPage />} />

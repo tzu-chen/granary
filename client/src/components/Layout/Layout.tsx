@@ -1,17 +1,18 @@
 import { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ThemeMenu } from '../ThemeMenu/ThemeMenu';
-import { LogIcon, EntriesIcon, LibraryIcon } from '../Icons/Icons';
+import { LogIcon, TimelineIcon, EntriesIcon, LibraryIcon } from '../Icons/Icons';
 import styles from './Layout.module.css';
 
 interface Props {
   children: ReactNode;
 }
 
-type NavSection = 'log' | 'entries' | 'library';
+type NavSection = 'log' | 'timeline' | 'entries' | 'library';
 
 function getActiveSection(pathname: string): NavSection {
   if (pathname.startsWith('/library')) return 'library';
+  if (pathname.startsWith('/timeline')) return 'timeline';
   if (pathname.startsWith('/entries')) return 'entries';
   return 'log';
 }
@@ -31,6 +32,14 @@ export default function Layout({ children }: Props) {
           title="Log"
         >
           <LogIcon size={iconSize} />
+        </NavLink>
+        <NavLink
+          to="/timeline"
+          className={`${styles.navLink} ${active === 'timeline' ? styles.navLinkActive : ''}`}
+          aria-label="Timeline"
+          title="Timeline"
+        >
+          <TimelineIcon size={iconSize} />
         </NavLink>
         <NavLink
           to="/entries"

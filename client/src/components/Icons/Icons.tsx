@@ -46,6 +46,18 @@ export function EntriesIcon({ size = 16, ...props }: IconProps) {
   );
 }
 
+export function TimelineIcon({ size = 16, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...defaultProps} {...props}>
+      <path d="M6 3v18" />
+      <circle cx="6" cy="8" r="2.4" />
+      <circle cx="6" cy="16" r="2.4" />
+      <path d="M10.4 8H20" />
+      <path d="M10.4 16H17" />
+    </svg>
+  );
+}
+
 export function LibraryIcon({ size = 16, ...props }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" {...defaultProps} {...props}>

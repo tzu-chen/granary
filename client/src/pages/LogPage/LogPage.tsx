@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Entry, HeatmapEntry } from '../../types';
 import { entryService, statsService } from '../../services/api';
@@ -11,7 +12,13 @@ import Heatmap from '../../components/Heatmap/Heatmap';
 import styles from './LogPage.module.css';
 
 export default function LogPage() {
-  const [date, setDate] = useState(new Date());
+  const [searchParams] = useSearchParams();
+  // Allow deep-linking to a specific day (e.g. from the Timeline's scratch strip)
+  // via ?date=YYYY-MM-DD; default to today. Parsed at noon to avoid TZ rollover.
+  const [date, setDate] = useState(() => {
+    const d = searchParams.get('date');
+    return d ? new Date(`${d}T12:00:00`) : new Date();
+  });
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPromote, setShowPromote] = useState<string | null>(null);

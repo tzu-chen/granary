@@ -41,6 +41,8 @@ export const daySummaryService = {
   get: (dateCst: string) => request<DaySummary>('GET', `/day-summaries/${dateCst}`),
   save: (dateCst: string, data: { goals?: string | null; progress?: string | null; open_questions?: string | null; scratch?: string | null }) =>
     request<DaySummary>('PUT', `/day-summaries/${dateCst}`, data),
+  listScratch: (start: string, end: string) =>
+    request<{ date_cst: string; scratch: string }[]>('GET', `/day-summaries?start=${start}&end=${end}`),
 };
 
 export const summaryItemService = {

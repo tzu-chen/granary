@@ -1,0 +1,109 @@
+.item {
+  display: flex;
+  gap: 0.85rem;
+  padding: 0.1rem 0;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* The rail is the vertical spine. Its ::before line stretches the full height of
+   the item (flex children stretch by default), so consecutive items form one
+   continuous line; the dot sits on top of it. */
+.rail {
+  position: relative;
+  flex: 0 0 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.rail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--color-border);
+}
+
+.dot {
+  position: relative;
+  z-index: 1;
+  margin-top: 0.5rem;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid var(--color-bg-primary);
+  box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  padding: 0.3rem 0.6rem 0.5rem;
+  border-radius: var(--radius-md);
+  transition: background var(--transition);
+}
+
+.item:hover .body {
+  background: var(--color-bg-secondary);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.time {
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.type {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.srs {
+  font-size: 0.66rem;
+  font-weight: 600;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--color-success);
+  color: #fff;
+}
+
+.content {
+  font-size: 0.95rem;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.tag {
+  font-size: 0.72rem;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+}
+
+.source {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}

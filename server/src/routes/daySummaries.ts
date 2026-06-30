@@ -3,6 +3,23 @@ import db from '../db';
 
 const router = Router();
 
+// GET /?start=YYYY-MM-DD&end=YYYY-MM-DD — scratch text for a date range (used by
+// the Timeline). Only rows with non-empty scratch are returned.
+router.get('/', (req: Request, res: Response) => {
+  try {
+    const { start, end } = req.query;
+    if (!start || !end) return res.status(400).json({ error: 'start and end are required' });
+    const rows = db.prepare(
+      `SELECT date_cst, scratch FROM day_summaries
+       WHERE scratch IS NOT NULL AND TRIM(scratch) != ''
+         AND date_cst >= ? AND date_cst <= ?`
+    ).all(start, end);
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch scratch range' });
+  }
+});
+
 // GET /:date_cst — get summary template + items for a date
 router.get('/:date_cst', (req: Request, res: Response) => {
   try {
