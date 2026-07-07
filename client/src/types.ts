@@ -8,7 +8,7 @@ export type ReviewRating = 'again' | 'hard' | 'good' | 'easy';
 
 export interface EntryLink {
   app: 'navigate' | 'scribe' | 'monolith' | 'pyramid' | 'granary';
-  ref_type: 'arxiv_id' | 'paper_id' | 'note_id' | 'flowchart_node' | 'project' | 'session_id' | 'file' | 'entry' | 'document' | 'map';
+  ref_type: 'arxiv_id' | 'paper_id' | 'note_id' | 'book_id' | 'flowchart_node' | 'project' | 'session_id' | 'file' | 'entry' | 'document' | 'map';
   ref_id: string;
   label?: string;
 }
@@ -318,6 +318,7 @@ export const CROSS_APP_OPTIONS: { app: string; label: string; refTypes: { value:
     label: 'Scribe',
     refTypes: [
       { value: 'note_id', label: 'Note' },
+      { value: 'book_id', label: 'Book' },
       { value: 'flowchart_node', label: 'Flowchart node' },
     ],
   },

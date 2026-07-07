@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapItem, MapItemStatus } from '../../types';
-import { MapItemUpdateInput, LinkLiveStatus } from '../../services/api';
+import { MapItem, MapItemLink, MapItemStatus } from '../../types';
+import { MapItemUpdateInput, LinkLiveStatus, InteropBaseUrls } from '../../services/api';
 import CrossAppLinkPicker from '../CrossAppLinkPicker/CrossAppLinkPicker';
 import MarkdownLatex from '../MarkdownLatex/MarkdownLatex';
+import { GripIcon, TrashIcon, ExternalLinkIcon } from '../Icons/Icons';
 import styles from './MapItemRow.module.css';
 
 interface Props {
   item: MapItem;
   liveStatus?: LinkLiveStatus;
+  bases?: InteropBaseUrls | null;
   onChange: (patch: MapItemUpdateInput) => void;
   onDelete: () => void;
   onDragStart?: () => void;
@@ -18,6 +20,12 @@ interface Props {
 }
 
 const STATUS_CYCLE: MapItemStatus[] = ['todo', 'doing', 'done'];
+const STATUS_TITLE: Record<MapItemStatus, string> = {
+  todo: 'To do — click to start',
+  doing: 'In progress — click to finish',
+  done: 'Done — click to reset',
+  skipped: 'Skipped — click to restore',
+};
 
 function internalPath(refType: string, refId: string): string {
   if (refType === 'document') return `/library/${refId}`;
@@ -25,9 +33,26 @@ function internalPath(refType: string, refId: string): string {
   return `/entries/${refId}`;
 }
 
+// Where a linked item's "jump" affordance should go. Granary refs navigate
+// internally; Pyramid sessions deep-link to the session; the other siblings
+// have no per-record route, so we open the app itself (best available).
+function jumpTarget(
+  link: MapItemLink,
+  bases?: InteropBaseUrls | null,
+): { internal: string } | { external: string } | null {
+  if (link.app === 'granary') return { internal: internalPath(link.ref_type, link.ref_id) };
+  const base = bases ? bases[link.app as keyof InteropBaseUrls] : null;
+  if (!base) return null;
+  if (link.app === 'pyramid' && link.ref_type === 'session_id') {
+    return { external: `${base}/sessions/${encodeURIComponent(link.ref_id)}` };
+  }
+  return { external: base };
+}
+
 export default function MapItemRow({
   item,
   liveStatus,
+  bases,
   onChange,
   onDelete,
   onDragStart,
@@ -78,28 +103,30 @@ export default function MapItemRow({
   const isDone = item.item_status === 'done';
   const isSkipped = item.item_status === 'skipped';
   const titleClass = `${styles.title} ${isDone || isSkipped ? styles.titleStruck : ''}`;
+  const hasNotes = !!item.notes;
 
   const link = item.link;
+  const jump = link ? jumpTarget(link, bases) : null;
+  const appName = link ? link.app.charAt(0).toUpperCase() + link.app.slice(1) : '';
 
   return (
     <div
-      className={`${styles.item} ${isDragOver ? styles.dragOver : ''}`}
+      className={`${styles.item} ${isDragOver ? styles.dragOver : ''} ${isDone ? styles.itemDone : ''}`}
       draggable={!editingTitle && !editingNotes}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
       <div className={styles.row}>
-        <span className={styles.dragHandle} title="Drag to reorder">&#8942;&#8942;</span>
+        <span className={styles.dragHandle} title="Drag to reorder"><GripIcon size={14} /></span>
 
         <button
           type="button"
-          className={`${styles.statusPill} ${styles[`status_${item.item_status}`]}`}
+          className={`${styles.statusBox} ${styles[`box_${item.item_status}`]}`}
           onClick={cycleStatus}
-          title="Cycle status (todo → doing → done)"
-        >
-          {item.item_status}
-        </button>
+          title={STATUS_TITLE[item.item_status]}
+          aria-label={STATUS_TITLE[item.item_status]}
+        />
 
         {editingTitle ? (
           <input
@@ -114,7 +141,7 @@ export default function MapItemRow({
             }}
           />
         ) : (
-          <span className={titleClass} onClick={startTitleEdit}>{item.title}</span>
+          <span className={titleClass} onClick={startTitleEdit} title={item.title}>{item.title}</span>
         )}
 
         {link ? (
@@ -123,13 +150,28 @@ export default function MapItemRow({
               <span className={`${styles.liveDot} ${styles[`live_${liveStatus}`]}`} title={liveStatus} />
             )}
             <span className={styles.linkApp}>{link.app}</span>
-            {link.app === 'granary' ? (
-              <Link className={styles.linkLabel} to={internalPath(link.ref_type, link.ref_id)} onClick={e => e.stopPropagation()}>
-                {link.label || link.ref_id}
+            <span className={styles.linkLabel}>{link.label || link.ref_id}</span>
+            {jump && ('internal' in jump ? (
+              <Link
+                className={styles.jumpBtn}
+                to={jump.internal}
+                title={`Open in ${appName}`}
+                onClick={e => e.stopPropagation()}
+              >
+                <ExternalLinkIcon size={12} />
               </Link>
             ) : (
-              <span className={styles.linkLabel}>{link.label || link.ref_id}</span>
-            )}
+              <a
+                className={styles.jumpBtn}
+                href={jump.external}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Open in ${appName}`}
+                onClick={e => e.stopPropagation()}
+              >
+                <ExternalLinkIcon size={12} />
+              </a>
+            ))}
             <button
               type="button"
               className={styles.linkRemove}
@@ -145,28 +187,30 @@ export default function MapItemRow({
           </button>
         )}
 
-        <button
-          type="button"
-          className={`${styles.notesToggle} ${notesOpen ? styles.notesToggleOpen : ''}`}
-          onClick={() => setNotesOpen(o => !o)}
-          title={notesOpen ? 'Hide notes' : 'Show notes'}
-          aria-expanded={notesOpen}
-        >
-          &#8964;
-        </button>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={`${styles.notesToggle} ${notesOpen ? styles.notesToggleOpen : ''} ${hasNotes ? styles.notesToggleFilled : ''}`}
+            onClick={() => setNotesOpen(o => !o)}
+            title={notesOpen ? 'Hide notes' : hasNotes ? 'Show notes' : 'Add notes'}
+            aria-expanded={notesOpen}
+          >
+            &#8964;
+          </button>
 
-        <button
-          type="button"
-          className={styles.skipBtn}
-          onClick={toggleSkip}
-          title={isSkipped ? 'Un-skip' : 'Skip'}
-        >
-          {isSkipped ? '↺' : '⊘'}
-        </button>
+          <button
+            type="button"
+            className={styles.iconBtn}
+            onClick={toggleSkip}
+            title={isSkipped ? 'Un-skip' : 'Skip'}
+          >
+            {isSkipped ? '↺' : '⊘'}
+          </button>
 
-        <button type="button" className={styles.deleteBtn} onClick={onDelete} title="Delete item">
-          &times;
-        </button>
+          <button type="button" className={`${styles.iconBtn} ${styles.deleteBtn}`} onClick={onDelete} title="Delete item">
+            <TrashIcon size={14} />
+          </button>
+        </div>
       </div>
 
       {notesOpen && (

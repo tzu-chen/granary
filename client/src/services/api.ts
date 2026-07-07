@@ -247,6 +247,30 @@ export const mapService = {
     request<{ item_id: string; status: LinkLiveStatus }[]>('GET', `/maps/${mapId}/resolve-links`),
 };
 
+export interface InteropSuggestion {
+  app: string;
+  ref_type: string;
+  ref_id: string;
+  label: string;
+  subtitle?: string;
+}
+
+export interface InteropBaseUrls {
+  navigate: string | null;
+  scribe: string | null;
+  monolith: string | null;
+  pyramid: string | null;
+}
+
+export const interopService = {
+  // Autocomplete records in a sibling app (or Granary itself) for cross-app links.
+  search: (app: string, refType: string, q: string) => {
+    const qs = new URLSearchParams({ app, ref_type: refType, q });
+    return request<InteropSuggestion[]>('GET', `/interop/search?${qs}`);
+  },
+  baseUrls: () => request<InteropBaseUrls>('GET', '/interop/base-urls'),
+};
+
 export const settingsService = {
   getAll: () => request<Record<string, string>>('GET', '/settings'),
   get: (key: string) => request<{ key: string; value: string }>('GET', `/settings/${key}`),

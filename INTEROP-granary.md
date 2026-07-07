@@ -37,7 +37,7 @@ interface Entry {
 
 interface EntryLink {
   app: 'navigate' | 'scribe' | 'monolith' | 'pyramid' | 'granary';
-  ref_type: 'arxiv_id' | 'paper_id' | 'note_id' | 'flowchart_node' | 'project' | 'session_id' | 'entry' | 'document' | 'map';
+  ref_type: 'arxiv_id' | 'paper_id' | 'note_id' | 'book_id' | 'flowchart_node' | 'project' | 'session_id' | 'entry' | 'document' | 'map';
   ref_id: string;
   label?: string;                     // Human-readable fallback — always set this. It's the only
                                        // readable trace of the link if the target is renamed/deleted.
@@ -169,6 +169,7 @@ Granary entries and map items store cross-app links in a `links`/`link` JSON fie
 | Navigate | 3001 / 5173 | `arxiv_id` | arXiv ID string | `GET /api/papers` (filter by `arxiv_id`) | `"2301.12345"` |
 | Navigate | 3001 / 5173 | `paper_id` | Navigate internal paper ID | `GET /api/papers` (filter by `paper_id`) | `"42"` |
 | Scribe | 3003 / 5173 | `note_id` | Scribe note UUID | `GET /api/notes/:id` | `"a1b2c3d4-..."` |
+| Scribe | 3003 / 5173 | `book_id` | Scribe attachment (book/PDF) UUID | `GET /api/attachments/:id` | `"b2c3d4e5-..."` |
 | Scribe | 3003 / 5173 | `flowchart_node` | **Stable composite key** `"{flowchart_id}:{node_key}"` — **not** the node title, which rots on rename | `GET /api/flowcharts/nodes/:flowchartId/:nodeKey` | `"abc-123:hahn-banach"` |
 | Monolith | 3005 / 5173 | `project` | Project directory name | `GET /api/projects` (list) | `"mfg-paper"` |
 | Monolith | 3005 / 5173 | `file` | `project/relative/path.tex` | Switch project + `GET /api/files/:path` | `"mfg-paper/intro.tex"` |

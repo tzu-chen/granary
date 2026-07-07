@@ -181,7 +181,7 @@ export default function MapsPage() {
             return (
               <div
                 key={map.id}
-                className={`${styles.card} ${dragOverId === map.id ? styles.dragOver : ''}`}
+                className={`${styles.card} ${styles[`card_${map.status}`]} ${dragOverId === map.id ? styles.dragOver : ''}`}
                 draggable={canReorder}
                 onDragStart={() => handleDragStart(map.id)}
                 onDragOver={e => handleDragOver(e, map.id)}
@@ -195,6 +195,10 @@ export default function MapsPage() {
                   <h3 className={styles.cardTitle}>{map.title}</h3>
                   <span className={statusPillClass(map.status)}>{map.status}</span>
                 </div>
+
+                {(map.goal || map.description) && (
+                  <p className={styles.cardPreview}>{map.goal || map.description}</p>
+                )}
 
                 {map.progress_pct != null && (
                   <div className={styles.progressRow}>
@@ -215,7 +219,9 @@ export default function MapsPage() {
                     </span>
                   )}
                   {counts.total > 0 && (
-                    <span className={styles.itemCount}>{counts.done}/{counts.total} items</span>
+                    <span className={styles.itemCount} title={`${counts.done} of ${counts.total} items done`}>
+                      {counts.done}/{counts.total} items
+                    </span>
                   )}
                 </div>
               </div>

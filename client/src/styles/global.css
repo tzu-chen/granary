@@ -52,6 +52,16 @@
   --color-kind-task-bg: rgba(107, 114, 128, 0.14);
   --color-kind-question-bg: rgba(249, 115, 22, 0.14);
 
+  /* Map item kinds (reading / writing / code / task) */
+  --color-mapkind-reading: #1c7ed6;
+  --color-mapkind-writing: #7048e8;
+  --color-mapkind-code: #0ca678;
+  --color-mapkind-task: #868e96;
+  --color-mapkind-reading-bg: rgba(28, 126, 214, 0.12);
+  --color-mapkind-writing-bg: rgba(112, 72, 232, 0.12);
+  --color-mapkind-code-bg: rgba(12, 166, 120, 0.12);
+  --color-mapkind-task-bg: rgba(134, 142, 150, 0.12);
+
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -112,6 +122,16 @@
   --color-kind-goal-bg: rgba(167, 139, 250, 0.2);
   --color-kind-task-bg: rgba(156, 163, 175, 0.18);
   --color-kind-question-bg: rgba(251, 146, 60, 0.18);
+
+  /* Map item kinds (reading / writing / code / task) */
+  --color-mapkind-reading: #74c0fc;
+  --color-mapkind-writing: #b197fc;
+  --color-mapkind-code: #63e6be;
+  --color-mapkind-task: #adb5bd;
+  --color-mapkind-reading-bg: rgba(116, 192, 252, 0.16);
+  --color-mapkind-writing-bg: rgba(177, 151, 252, 0.16);
+  --color-mapkind-code-bg: rgba(99, 230, 190, 0.16);
+  --color-mapkind-task-bg: rgba(173, 181, 189, 0.16);
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);

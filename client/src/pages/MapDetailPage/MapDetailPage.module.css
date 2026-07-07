@@ -1,9 +1,8 @@
 .page {
-  max-width: 900px;
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 1.25rem;
 }
 
 .loading {
@@ -25,6 +24,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  min-width: 0;
 }
 
 .backLink {
@@ -41,6 +41,7 @@
   margin: 0;
   font-size: 2rem;
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .actions {
@@ -75,80 +76,190 @@
   color: #fff;
 }
 
-.controls {
-  display: flex;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  gap: 1rem;
+/* Two-column: control rail + content. Rail is sticky on wide screens. */
+.body {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 1.75rem;
+  align-items: start;
 }
 
-.control {
+.rail {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.9rem;
+  position: sticky;
+  top: 4rem;
 }
 
-.controlLabel {
-  font-size: 0.75rem;
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.85rem 0.9rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.panelLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--color-text-muted);
 }
 
-.select,
-.dateInput,
-.kindSelect {
+/* Status pills */
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.statusPill {
+  padding: 0.28rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg-primary);
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.statusPill:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-text-muted);
+}
+
+.statusActive_planned {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-text-muted);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.statusActive_active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.statusActive_active:hover {
+  color: #fff;
+}
+
+.statusActive_completed {
+  background: var(--color-state-done-bg);
+  border-color: var(--color-success);
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.statusActive_abandoned {
+  background: var(--color-state-blocked-bg);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.reasonInput {
   padding: 0.4rem 0.6rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
-  font-size: 0.88rem;
-  cursor: pointer;
+  font-size: 0.85rem;
 }
 
-.select:focus,
-.dateInput:focus,
-.kindSelect:focus {
+.reasonInput:focus {
   outline: none;
   border-color: var(--color-accent);
 }
 
-.progressControl {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
+/* Checklist (item completion) — deliberately styled differently from the
+   manual progress bar so the two numbers read as distinct. */
+.checklistHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
-.progressInput {
-  width: 4rem;
-  padding: 0.4rem 0.5rem;
+.checklistCount {
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+.checklistTrack {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-bg-tertiary);
+  overflow: hidden;
+}
+
+.checklistFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-success);
+  transition: width var(--transition);
+}
+
+.checklistHint {
+  font-size: 0.75rem;
+  color: var(--color-warning);
+}
+
+/* Deadline */
+.deadlineRow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--color-text-muted);
+  flex-wrap: wrap;
+}
+
+.dateInput {
+  flex: 1;
+  min-width: 8rem;
+  padding: 0.4rem 0.6rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
-  font-size: 0.88rem;
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 
-.progressInput:focus {
+.dateInput:focus {
   outline: none;
   border-color: var(--color-accent);
 }
 
-.pctSign {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
+.deadlineBadge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.clearBtn {
-  background: none;
-  border: none;
-  color: var(--color-text-muted);
-  font-size: 1.05rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 0.2rem;
+.deadline_normal {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
 }
 
-.clearBtn:hover {
+.deadline_soon {
+  background: var(--color-state-in-progress-bg);
+  color: var(--color-warning);
+}
+
+.deadline_overdue {
+  background: var(--color-state-blocked-bg);
   color: var(--color-danger);
 }
 
@@ -156,7 +267,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
-  align-items: center;
 }
 
 .tag {
@@ -167,53 +277,18 @@
   font-size: 0.78rem;
 }
 
-.reasonInput {
-  padding: 0.45rem 0.7rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  font-size: 0.88rem;
-}
-
-.reasonInput:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.progressBarRow {
+/* Content column */
+.content {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.progressTrack {
-  flex: 1;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--color-bg-tertiary);
-  overflow: hidden;
-}
-
-.progressFill {
-  height: 100%;
-  background: var(--color-accent);
-  border-radius: 999px;
-  transition: width var(--transition);
-}
-
-.progressBarLabel {
-  font-size: 0.78rem;
-  color: var(--color-text-muted);
-  font-variant-numeric: tabular-nums;
-  min-width: 2.6rem;
-  text-align: right;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
 }
 
 .section {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.6rem;
 }
 
 .sectionTitle {
@@ -222,15 +297,28 @@
   color: var(--color-text-secondary);
   border-bottom: 1px solid var(--color-border);
   padding-bottom: 0.35rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.sectionHint {
+  font-size: 0.72rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
 }
 
 .scopeBody {
   font-size: 1rem;
-  line-height: 1.55;
+  line-height: 1.6;
+  max-width: 70ch;
 }
 
 .goalTextarea {
   width: 100%;
+  max-width: 70ch;
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -239,6 +327,7 @@
   font-size: 0.95rem;
   line-height: 1.5;
   resize: vertical;
+  font-family: inherit;
 }
 
 .goalTextarea:focus {
@@ -275,22 +364,63 @@
   font-size: 0.88rem;
   color: var(--color-text-secondary);
   font-style: italic;
+  max-width: 70ch;
+}
+
+/* Items */
+.itemsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.35rem;
+}
+
+.itemsHead .sectionTitle {
+  border: none;
+  padding: 0;
+}
+
+.itemsCounter {
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
 }
 
 .kindGroup {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.75rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--kind-color, var(--color-border));
 }
 
 .kindTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  color: var(--kind-color, var(--color-text-muted));
+}
+
+.kindIcon {
+  display: inline-flex;
+  color: var(--kind-color);
+}
+
+.kindCount {
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   color: var(--color-text-muted);
+  letter-spacing: 0;
 }
 
 .itemList {
@@ -302,14 +432,14 @@
 .empty {
   color: var(--color-text-muted);
   font-size: 0.9rem;
-  padding: 0.5rem 0;
+  padding: 0.75rem 0;
 }
 
 .addForm {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
   padding: 0.75rem;
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
@@ -320,6 +450,21 @@
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.kindSelect {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.kindSelect:focus {
+  outline: none;
+  border-color: var(--color-accent);
 }
 
 .addTitle {
@@ -410,6 +555,7 @@
   font-size: 0.88rem;
   line-height: 1.5;
   resize: vertical;
+  font-family: inherit;
 }
 
 .addNotes:focus {
@@ -423,4 +569,23 @@
   color: var(--color-danger);
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
+}
+
+/* Stack the rail above the content on narrow viewports. */
+@media (max-width: 860px) {
+  .body {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .rail {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .panel {
+    flex: 1;
+    min-width: 240px;
+  }
 }
