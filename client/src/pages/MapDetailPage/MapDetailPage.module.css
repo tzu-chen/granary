@@ -1,0 +1,426 @@
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-muted);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 1rem;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.backLink {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--color-accent);
+}
+
+.title {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.btn {
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  font-size: 0.88rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.btnDanger {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: none;
+}
+
+.btnDanger:hover {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.controls {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.controlLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.select,
+.dateInput,
+.kindSelect {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.select:focus,
+.dateInput:focus,
+.kindSelect:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.progressControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.progressInput {
+  width: 4rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.88rem;
+}
+
+.progressInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.pctSign {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.clearBtn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.2rem;
+}
+
+.clearBtn:hover {
+  color: var(--color-danger);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.tag {
+  padding: 0.1rem 0.5rem;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+}
+
+.reasonInput {
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.88rem;
+}
+
+.reasonInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.progressBarRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-bg-tertiary);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 999px;
+  transition: width var(--transition);
+}
+
+.progressBarLabel {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 2.6rem;
+  text-align: right;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.35rem;
+}
+
+.scopeBody {
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.goalTextarea {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.goalTextarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.originalGoal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.disclosureBtn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.disclosureBtn:hover {
+  color: var(--color-accent);
+}
+
+.originalGoalText {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  background: var(--color-bg-secondary);
+  border-left: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.kindGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.kindTitle {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.empty {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  padding: 0.5rem 0;
+}
+
+.addForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.addRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.addTitle {
+  flex: 1;
+  min-width: 12rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+}
+
+.addTitle:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.addLinkBtn {
+  padding: 0.45rem 0.7rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.addLinkBtn:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.addBtn {
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.88rem;
+}
+
+.addBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.newLinkChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: flex-start;
+  padding: 0.15rem 0.5rem;
+  background: var(--color-bg-tertiary);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+.newLinkApp {
+  color: var(--color-accent);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.newLinkRemove {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.1rem;
+}
+
+.newLinkRemove:hover {
+  color: var(--color-danger);
+}
+
+.addNotes {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.addNotes:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.error {
+  padding: 0.55rem 0.75rem;
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-danger);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}

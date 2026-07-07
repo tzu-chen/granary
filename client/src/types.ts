@@ -7,8 +7,8 @@ export type CardState = 'new' | 'learning' | 'review' | 'relearning';
 export type ReviewRating = 'again' | 'hard' | 'good' | 'easy';
 
 export interface EntryLink {
-  app: 'navigate' | 'scribe' | 'monolith';
-  ref_type: 'arxiv_id' | 'paper_id' | 'note_id' | 'flowchart_node' | 'project';
+  app: 'navigate' | 'scribe' | 'monolith' | 'pyramid' | 'granary';
+  ref_type: 'arxiv_id' | 'paper_id' | 'note_id' | 'flowchart_node' | 'project' | 'session_id' | 'file' | 'entry' | 'document' | 'map';
   ref_id: string;
   label?: string;
 }
@@ -194,6 +194,74 @@ export const TASK_KINDS: { value: TaskKind; label: string }[] = [
   { value: 'question', label: 'Question' },
 ];
 
+export type MapKind = 'reading' | 'writing' | 'code' | 'task';
+
+export type MapStatus = 'planned' | 'active' | 'completed' | 'abandoned';
+
+export type MapItemStatus = 'todo' | 'doing' | 'done' | 'skipped';
+
+// Loose cross-app link shape (same shape as DocumentLink) — supports arbitrary apps.
+export interface MapItemLink {
+  app: string;
+  ref_type: string;
+  ref_id: string;
+  label?: string;
+}
+
+export interface MapRecord {
+  id: string;
+  title: string;
+  description?: string | null;
+  goal?: string | null;
+  goal_original?: string | null;
+  status: MapStatus;
+  status_reason?: string | null;
+  progress_pct?: number | null;
+  tags: string[];
+  due_date?: string | null;
+  position: number;
+  completed_on?: string | null;
+  created_at: string;
+  updated_at: string;
+  item_counts?: { total: number; done: number };
+}
+
+export interface MapItem {
+  id: string;
+  map_id: string;
+  kind: MapKind;
+  title: string;
+  notes?: string | null;
+  item_status: MapItemStatus;
+  link?: MapItemLink | null;
+  entry_id?: string | null;
+  task_id?: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export const MAP_STATUSES: { value: MapStatus; label: string }[] = [
+  { value: 'planned', label: 'Planned' },
+  { value: 'active', label: 'Active' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'abandoned', label: 'Abandoned' },
+];
+
+export const MAP_KINDS: { value: MapKind; label: string }[] = [
+  { value: 'reading', label: 'Reading' },
+  { value: 'writing', label: 'Writing' },
+  { value: 'code', label: 'Code' },
+  { value: 'task', label: 'Task' },
+];
+
+export const MAP_ITEM_STATUSES: { value: MapItemStatus; label: string }[] = [
+  { value: 'todo', label: 'Todo' },
+  { value: 'doing', label: 'Doing' },
+  { value: 'done', label: 'Done' },
+  { value: 'skipped', label: 'Skipped' },
+];
+
 export interface DocumentLink {
   app: string;
   ref_type: string;
@@ -239,7 +307,11 @@ export const CROSS_APP_OPTIONS: { app: string; label: string; refTypes: { value:
   {
     app: 'granary',
     label: 'Granary',
-    refTypes: [{ value: 'entry', label: 'Entry' }, { value: 'document', label: 'Document' }],
+    refTypes: [
+      { value: 'entry', label: 'Entry' },
+      { value: 'document', label: 'Document' },
+      { value: 'map', label: 'Map' },
+    ],
   },
   {
     app: 'scribe',
@@ -260,6 +332,14 @@ export const CROSS_APP_OPTIONS: { app: string; label: string; refTypes: { value:
   {
     app: 'monolith',
     label: 'Monolith',
-    refTypes: [{ value: 'project', label: 'Project' }],
+    refTypes: [
+      { value: 'project', label: 'Project' },
+      { value: 'file', label: 'File' },
+    ],
+  },
+  {
+    app: 'pyramid',
+    label: 'Pyramid',
+    refTypes: [{ value: 'session_id', label: 'Session' }],
   },
 ];

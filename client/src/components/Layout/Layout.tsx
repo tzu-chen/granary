@@ -1,17 +1,18 @@
 import { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ThemeMenu } from '../ThemeMenu/ThemeMenu';
-import { LogIcon, TimelineIcon, EntriesIcon, LibraryIcon } from '../Icons/Icons';
+import { LogIcon, TimelineIcon, EntriesIcon, LibraryIcon, MapIcon } from '../Icons/Icons';
 import styles from './Layout.module.css';
 
 interface Props {
   children: ReactNode;
 }
 
-type NavSection = 'log' | 'timeline' | 'entries' | 'library';
+type NavSection = 'log' | 'timeline' | 'entries' | 'library' | 'maps';
 
 function getActiveSection(pathname: string): NavSection {
   if (pathname.startsWith('/library')) return 'library';
+  if (pathname.startsWith('/maps')) return 'maps';
   if (pathname.startsWith('/timeline')) return 'timeline';
   if (pathname.startsWith('/entries')) return 'entries';
   return 'log';
@@ -56,6 +57,14 @@ export default function Layout({ children }: Props) {
           title="Library"
         >
           <LibraryIcon size={iconSize} />
+        </NavLink>
+        <NavLink
+          to="/maps"
+          className={`${styles.navLink} ${active === 'maps' ? styles.navLinkActive : ''}`}
+          aria-label="Maps"
+          title="Maps"
+        >
+          <MapIcon size={iconSize} />
         </NavLink>
         <div className={styles.navSpacer} />
         <ThemeMenu />

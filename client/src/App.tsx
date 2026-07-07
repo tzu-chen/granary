@@ -8,6 +8,9 @@ import EntryEditPage from './pages/EntryEditPage/EntryEditPage';
 import LibraryPage from './pages/LibraryPage/LibraryPage';
 import DocumentDetailPage from './pages/DocumentDetailPage/DocumentDetailPage';
 import DocumentEditPage from './pages/DocumentEditPage/DocumentEditPage';
+import MapsPage from './pages/MapsPage/MapsPage';
+import MapDetailPage from './pages/MapDetailPage/MapDetailPage';
+import MapEditPage from './pages/MapEditPage/MapEditPage';
 
 export default function App() {
   return (
@@ -22,6 +25,10 @@ export default function App() {
         <Route path="/library/new" element={<DocumentEditPage mode="new" />} />
         <Route path="/library/:id" element={<DocumentDetailPage />} />
         <Route path="/library/:id/edit" element={<DocumentEditPage mode="edit" />} />
+        <Route path="/maps" element={<MapsPage />} />
+        <Route path="/maps/new" element={<MapEditPage mode="new" />} />
+        <Route path="/maps/:id" element={<MapDetailPage />} />
+        <Route path="/maps/:id/edit" element={<MapEditPage mode="edit" />} />
         <Route path="/dashboard" element={<Navigate to="/" replace />} />
         <Route path="/open" element={<Navigate to="/entries?tab=open" replace />} />
         <Route path="/review" element={<Navigate to="/entries?tab=review" replace />} />

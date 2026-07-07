@@ -1,4 +1,4 @@
-import { Entry, EntryWithResolution, DaySummary, SummaryItem, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority, ScribeBook, Task, TaskState, TaskKind, Document, DocumentStats, DocumentFilters } from '../types';
+import { Entry, EntryWithResolution, DaySummary, SummaryItem, ReviewCard, DueCard, StatsOverview, HeatmapEntry, ForecastEntry, ReviewHistoryEntry, TagCount, ReviewRating, OpenStats, EntryPriority, ScribeBook, Task, TaskState, TaskKind, Document, DocumentStats, DocumentFilters, MapRecord, MapItem, MapItemLink, MapKind, MapStatus, MapItemStatus } from '../types';
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`/api${path}`, {
@@ -176,6 +176,75 @@ export const documentService = {
     return response.json();
   },
   exportUrl: (id: string) => `/api/documents/${id}/export`,
+};
+
+export interface MapItemInput {
+  kind: MapKind;
+  title: string;
+  notes?: string | null;
+  link?: MapItemLink | null;
+  entry_id?: string | null;
+  task_id?: string | null;
+  position?: number;
+}
+
+export interface MapCreateInput {
+  title: string;
+  description?: string | null;
+  goal?: string | null;
+  tags?: string[];
+  due_date?: string | null;
+  items?: MapItemInput[];
+}
+
+export interface MapUpdateInput {
+  title?: string;
+  description?: string | null;
+  goal?: string | null;
+  status?: MapStatus;
+  status_reason?: string | null;
+  progress_pct?: number | null;
+  tags?: string[];
+  due_date?: string | null;
+  position?: number;
+}
+
+export interface MapItemUpdateInput {
+  kind?: MapKind;
+  title?: string;
+  notes?: string | null;
+  item_status?: MapItemStatus;
+  link?: MapItemLink | null;
+  entry_id?: string | null;
+  task_id?: string | null;
+  position?: number;
+}
+
+export type LinkLiveStatus = 'ok' | 'missing' | 'unreachable';
+
+export const mapService = {
+  list: (params?: { status?: string; tag?: string; search?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set('status', params.status);
+    if (params?.tag) qs.set('tag', params.tag);
+    if (params?.search) qs.set('search', params.search);
+    const query = qs.toString() ? `?${qs}` : '';
+    return request<MapRecord[]>('GET', `/maps${query}`);
+  },
+  get: (id: string) => request<MapRecord & { items: MapItem[] }>('GET', `/maps/${id}`),
+  create: (data: MapCreateInput) => request<MapRecord & { items: MapItem[] }>('POST', '/maps', data),
+  update: (id: string, data: MapUpdateInput) => request<MapRecord & { items: MapItem[] }>('PATCH', `/maps/${id}`, data),
+  delete: (id: string) => request<{ success: boolean }>('DELETE', `/maps/${id}`),
+  reorder: (orderedIds: string[]) => request<{ success: boolean }>('PATCH', '/maps/reorder', { ordered_ids: orderedIds }),
+  createItem: (mapId: string, data: MapItemInput) => request<MapItem>('POST', `/maps/${mapId}/items`, data),
+  updateItem: (mapId: string, itemId: string, data: MapItemUpdateInput) =>
+    request<MapItem>('PATCH', `/maps/${mapId}/items/${itemId}`, data),
+  deleteItem: (mapId: string, itemId: string) =>
+    request<{ success: boolean }>('DELETE', `/maps/${mapId}/items/${itemId}`),
+  reorderItems: (mapId: string, orderedIds: string[]) =>
+    request<{ success: boolean }>('PATCH', `/maps/${mapId}/items/reorder`, { ordered_ids: orderedIds }),
+  resolveLinks: (mapId: string) =>
+    request<{ item_id: string; status: LinkLiveStatus }[]>('GET', `/maps/${mapId}/resolve-links`),
 };
 
 export const settingsService = {

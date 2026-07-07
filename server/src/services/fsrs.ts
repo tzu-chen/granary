@@ -34,12 +34,11 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function getCSTDate(daysFromNow = 0): string {
-  const now = new Date();
+  // Date.now() is already UTC; shift by the fixed CST offset (UTC-6) only.
+  // Machine-local timezone must not enter the computation.
   const cstOffset = -6 * 60;
-  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
-  const cstMs = utcMs + cstOffset * 60000 + daysFromNow * 86400000;
-  const cst = new Date(cstMs);
-  return cst.toISOString().slice(0, 10);
+  const cstMs = Date.now() + cstOffset * 60000 + daysFromNow * 86400000;
+  return new Date(cstMs).toISOString().slice(0, 10);
 }
 
 function initStability(rating: number, w: number[]): number {

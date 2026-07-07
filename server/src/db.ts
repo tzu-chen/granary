@@ -182,6 +182,53 @@ export function initializeDatabase(): void {
       INSERT INTO documents_fts(rowid, title, content, source, tags)
       VALUES (NEW.rowid, NEW.title, NEW.content, NEW.source, NEW.tags);
     END;
+
+    CREATE TABLE IF NOT EXISTS maps (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      goal TEXT,
+      goal_original TEXT,
+      status TEXT NOT NULL DEFAULT 'planned'
+        CHECK (status IN ('planned','active','completed','abandoned')),
+      status_reason TEXT,
+      progress_pct INTEGER,
+      tags TEXT NOT NULL DEFAULT '[]',
+      due_date TEXT,
+      position INTEGER NOT NULL DEFAULT 0,
+      completed_on TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS map_items (
+      id TEXT PRIMARY KEY,
+      map_id TEXT NOT NULL,
+      kind TEXT NOT NULL
+        CHECK (kind IN ('reading','writing','code','task')),
+      title TEXT NOT NULL,
+      notes TEXT,
+      item_status TEXT NOT NULL DEFAULT 'todo'
+        CHECK (item_status IN ('todo','doing','done','skipped')),
+      link TEXT,
+      entry_id TEXT,
+      task_id TEXT,
+      position INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (map_id) REFERENCES maps(id) ON DELETE CASCADE,
+      FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE SET NULL,
+      FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_maps_status ON maps(status);
+    CREATE INDEX IF NOT EXISTS idx_maps_position ON maps(position);
+    CREATE INDEX IF NOT EXISTS idx_maps_due_date ON maps(due_date);
+    CREATE INDEX IF NOT EXISTS idx_map_items_map_id ON map_items(map_id);
+    CREATE INDEX IF NOT EXISTS idx_map_items_map_position ON map_items(map_id, position);
+    CREATE INDEX IF NOT EXISTS idx_map_items_status ON map_items(item_status);
+    CREATE INDEX IF NOT EXISTS idx_map_items_entry_id ON map_items(entry_id);
+    CREATE INDEX IF NOT EXISTS idx_map_items_task_id ON map_items(task_id);
   `);
 
   // Migration: add kind column to tasks for existing DBs (CHECK constraint omitted on ALTER;

@@ -184,6 +184,75 @@ A drill session. Pulls all cards where `due_date <= today`, presents them one at
 
 Shows review statistics: cards due today, upcoming forecast (next 7/30 days), retention rate over time, heatmap of entries created per day (similar to Scribe's reading time heatmap). Also shows entries by tag and by source, so you can see coverage across books/topics.
 
+### Maps (Mapping)
+
+**PoE-inspired framing** (Path of Exile's Atlas of Worlds): a **map** is one bounded, completable unit of study or work — a scoped chunk with a start and an end. **Mapping** is the loop of running them: pick a map, work its items, complete it, pick the next one. A map is not a saved view over entries and not a project-management system — it's a lightweight container that says "this much, then done."
+
+**Locked design decisions:**
+1. **New entity** (`maps` + `map_items` tables), not a saved view over entries.
+2. **Flat list** of maps — no dependency/Atlas tree. An explicit non-goal for v1.
+3. **Manual progress** — the user sets the map's `progress_pct` and `status` directly. There is no auto-derived rollup engine. An `X/Y items done` counter may be *displayed* (computed from `map_items.item_status`), but it never writes `progress_pct`.
+4. **Optional deadlines** — `due_date` is nullable.
+5. **Heterogeneous `map_items`** — one table with a `kind` field (`reading` / `writing` / `code` / `task`) rather than separate tables per kind.
+6. **No coupling to tasks** — `entry_id` and `task_id` on a map item are optional references to *existing* rows in `entries`/`tasks`. Map items never create tasks or entries; they only point at ones that already exist, or stand alone as a local todo (`kind='task'`, no refs). This avoids a third "done" store — Granary already has the open-items system (`entries.status='open'`) and the task system (`tasks`); mapping reuses them instead of duplicating them.
+
+```typescript
+interface MapRecord {
+  id: string;                          // UUID
+  title: string;
+  description?: string;                // Markdown+LaTeX — the scope: what's in, what's out
+  goal?: string;                        // Editable current goal/success criterion ("definition of done")
+  goal_original?: string;               // Write-once: set the first time `goal` is written, never
+                                        // overwritten again. Lets goal drift ("moved the goalposts")
+                                        // be seen by diffing goal_original against the current goal.
+  status: 'planned' | 'active' | 'completed' | 'abandoned';
+  status_reason?: string;               // For 'abandoned' (mirrors tasks.state_reason)
+  progress_pct?: number;                // Manual, 0-100, nullable. Never auto-written.
+  tags: string[];                       // JSON array stored as TEXT
+  due_date?: string;                    // Nullable, YYYY-MM-DD CST. Optional deadline.
+  position: number;                     // Flat-list ordering
+  completed_on?: string;                // date_cst, set automatically when status -> 'completed',
+                                        // cleared automatically on leaving 'completed'
+  created_at: string;                   // ISO 8601
+  updated_at: string;                   // ISO 8601
+}
+
+interface MapItem {
+  id: string;                          // UUID
+  map_id: string;                      // FK -> maps(id) ON DELETE CASCADE
+  kind: 'reading' | 'writing' | 'code' | 'task';
+  title: string;
+  notes?: string;
+  item_status: 'todo' | 'doing' | 'done' | 'skipped';
+  link?: MapItemLink;                  // Nullable — a single loose cross-app ref (see below)
+  entry_id?: string;                   // Nullable FK -> entries(id) ON DELETE SET NULL
+  task_id?: string;                    // Nullable FK -> tasks(id) ON DELETE SET NULL
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+An item is one of: a **cross-app link** (`link` set), an **internal ref** (`entry_id` or `task_id` set), or a **standalone todo** (`kind='task'`, no refs) — not enforced by a constraint, kept flexible.
+
+**`map_items.link` uses the loose cross-app link shape**, not the narrow `EntryLink` type used by entries:
+```typescript
+interface MapItemLink {
+  app: string;                          // 'navigate' | 'scribe' | 'monolith' | 'pyramid' | 'granary'
+  ref_type: string;                     // e.g. 'arxiv_id', 'note_id', 'flowchart_node', 'project',
+                                        // 'file', 'session_id', 'entry', 'document', 'map'
+  ref_id: string;
+  label?: string;                       // Human-readable fallback if the ref ever breaks
+}
+```
+This is the same loose `{app, ref_type, ref_id, label?}` shape already used by `Document.links` (`DocumentLink` in `client/src/types.ts`), reused here because it supports arbitrary apps (including `granary` self-refs and `pyramid`) without a fixed enum. Reuse `CrossAppLinkPicker` (`client/src/components/CrossAppLinkPicker/`) to author these. See `INTEROP-granary.md` for the canonical `{app, ref_type, ref_id}` keys per target app.
+
+**Progress is manual, on purpose.** `progress_pct` is a plain nullable integer the user sets themselves. The UI may compute and display an `X/Y done` counter from `map_items.item_status`, but that counter is read-only — it is never written back into `progress_pct`. This keeps "how far along I feel" and "how many items are checked off" as two separate, honestly-labeled numbers.
+
+**Search** on maps is a simple `LIKE` over `title`/`description`/`goal` — no FTS5. Maps are expected to be few; FTS is overkill here (contrast with `entries_fts`).
+
+Types are named `MapRecord`/`MapItem` in `client/src/types.ts` — **not** `Map`, to avoid shadowing the global `Map` type. See "API Endpoints" below for the `/api/maps` routes and "Client Views & Routing" for `MapsPage`/`MapDetailPage`.
+
 ---
 
 ## Database Schema (`server/data/granary.db`)
@@ -278,6 +347,47 @@ CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS maps (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT,                         -- Markdown + KaTeX. The "scope."
+  goal TEXT,                                 -- Editable current goal/success criterion ("definition of done")
+  goal_original TEXT,                        -- Write-once: set the first time `goal` is written, never
+                                              -- overwritten again. Records the original definition of
+                                              -- done so goal drift is visible.
+  status TEXT NOT NULL DEFAULT 'planned'
+    CHECK (status IN ('planned', 'active', 'completed', 'abandoned')),
+  status_reason TEXT,                        -- For 'abandoned' (mirrors tasks.state_reason)
+  progress_pct INTEGER,                      -- Manual, 0-100, nullable. Never auto-written.
+  tags TEXT NOT NULL DEFAULT '[]',           -- JSON array of strings
+  due_date TEXT,                             -- Nullable, YYYY-MM-DD CST. Optional deadline.
+  position INTEGER NOT NULL DEFAULT 0,       -- Flat-list ordering
+  completed_on TEXT,                         -- date_cst, set when status -> completed, cleared on leaving it
+  created_at TEXT NOT NULL,                  -- ISO 8601
+  updated_at TEXT NOT NULL                   -- ISO 8601
+);
+
+CREATE TABLE IF NOT EXISTS map_items (
+  id TEXT PRIMARY KEY,
+  map_id TEXT NOT NULL,                      -- FK -> maps(id) ON DELETE CASCADE
+  kind TEXT NOT NULL
+    CHECK (kind IN ('reading', 'writing', 'code', 'task')),
+  title TEXT NOT NULL,
+  notes TEXT,
+  item_status TEXT NOT NULL DEFAULT 'todo'
+    CHECK (item_status IN ('todo', 'doing', 'done', 'skipped')),
+  link TEXT,                                 -- Nullable JSON of a single loose cross-app ref
+                                              -- {app, ref_type, ref_id, label?} (see Maps section above)
+  entry_id TEXT,                             -- Nullable FK -> entries(id) ON DELETE SET NULL
+  task_id TEXT,                              -- Nullable FK -> tasks(id) ON DELETE SET NULL
+  position INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (map_id) REFERENCES maps(id) ON DELETE CASCADE,
+  FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE SET NULL,
+  FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL
+);
 ```
 
 **Indices:**
@@ -295,6 +405,14 @@ CREATE TABLE IF NOT EXISTS settings (
 - `review_log.reviewed_at` — for stats over time
 - `summary_items.date_cst` — for fetching items by day
 - `summary_items.(date_cst, position)` — for ordered retrieval
+- `maps.status` — for filtering
+- `maps.position` — for flat-list ordering
+- `maps.due_date` — for deadline queries
+- `map_items.map_id` — FK lookup
+- `map_items.(map_id, position)` — for ordered retrieval within a map
+- `map_items.item_status` — for status filtering/counts
+- `map_items.entry_id` — FK lookup
+- `map_items.task_id` — FK lookup
 
 **JSON columns:** `tags` and `links` are stored as JSON TEXT. Parse with `JSON.parse()` in route handlers, serialize with `JSON.stringify()` on write. Same pattern as Navigate's `authors`/`categories` and Scribe's `tags`.
 
@@ -396,6 +514,24 @@ The day summary has two layers: a **structured template** (goals/progress/open q
 | PUT | `/api/review/cards/:id` | Update card front/back (manual edit) |
 | POST | `/api/review/cards/:id/rate` | Submit a review rating. Body: `{ rating: 'again'|'hard'|'good'|'easy', duration_ms?: number }`. Runs FSRS, updates card, inserts review_log row. Returns updated card. |
 
+### Maps
+
+See "Maps (Mapping)" under Core Concepts for the data model and locked design decisions.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/maps` | List maps. Query params: `status`, `tag`, `search` (simple `LIKE` over title/description/goal). Ordered by `position`, then `created_at` descending. Each map includes `item_counts: { total, done }`. |
+| GET | `/api/maps/:id` | Get single map with its items (ordered by `position`) and `item_counts`. |
+| POST | `/api/maps` | Create a map. Body: `{ title, description?, goal?, tags?, due_date?, items?: [...] }`. `items` is optional — if provided, the map and its items are created transactionally in one call. |
+| PATCH | `/api/maps/:id` | Update any field, including `status`/`progress_pct`/`status_reason`. Setting `status='completed'` auto-sets `completed_on` to today (CST); moving off `'completed'` clears it. Writing `goal` for the first time also sets `goal_original` (never overwritten thereafter). |
+| DELETE | `/api/maps/:id` | Delete a map (cascades to its items). |
+| PATCH | `/api/maps/reorder` | Reorder maps. Body: `{ ordered_ids: string[] }`. |
+| POST | `/api/maps/:id/items` | Create a map item. Body: `{ kind, title, notes?, link?, entry_id?, task_id?, position? }`. |
+| PATCH | `/api/maps/:id/items/reorder` | Reorder items within a map. Body: `{ ordered_ids: string[] }`. |
+| PATCH | `/api/maps/:id/items/:itemId` | Update any item field, including `item_status`, `position`. |
+| DELETE | `/api/maps/:id/items/:itemId` | Delete an item. |
+| GET | `/api/maps/:id/resolve-links` | Best-effort liveness check: pings each item's `link` target against the sibling app's existence-check endpoint (see `INTEROP-granary.md`) and returns per-item `ok`/`missing`/`unreachable`. Never blocks rendering — degrades gracefully if a sibling app is down. |
+
 ### Stats
 
 | Method | Path | Description |
@@ -453,6 +589,10 @@ Use the **FSRS-5** algorithm (Free Spaced Repetition Scheduler). This is a ~50-l
 | `/dashboard` | `DashboardPage` | Stats, heatmap, forecast |
 | `/entries/:id` | `EntryDetailPage` | Single entry view with its review cards |
 | `/entries/:id/edit` | `EntryEditPage` | Edit an entry |
+| `/maps` | `MapsPage` | Flat list of maps (Mapping) |
+| `/maps/:id` | `MapDetailPage` | Single map view with its items |
+| `/maps/new` | `MapEditPage` (or equivalent) | Create a map |
+| `/maps/:id/edit` | `MapEditPage` (or equivalent) | Edit a map |
 
 ### LogPage (/)
 
@@ -537,6 +677,76 @@ Full-text search and browse across all entries.
 - List of associated review cards with their SRS state, due date, review count
 - Button to add another card from this entry
 - Review history for each card (mini-timeline of past ratings)
+
+### MapsPage (/maps)
+
+- Flat list of maps (no tree/hierarchy — see "Locked design decisions" under Maps (Mapping))
+- **Filter controls**: by status (planned/active/completed/abandoned), by tag
+- **Map cards**, each showing: title, status, progress bar (`progress_pct`), an `X/Y items done` counter (display-only, computed from item statuses), due-date badge (if set)
+- **Drag-to-reorder** (updates `position` via `PATCH /api/maps/reorder`)
+- "New map" button → `/maps/new`
+- Reachable via a top-level "Maps" nav link, alongside the other primary views
+
+### MapDetailPage (/maps/:id)
+
+- **Scope**: rendered `description` (Markdown+LaTeX)
+- **Goal**: editable current `goal`, with `goal_original` shown alongside/on-demand so goal drift is visible
+- **Status selector** (planned/active/completed/abandoned) with `status_reason` field shown when `abandoned`; setting `completed` auto-stamps `completed_on`
+- **Manual `progress_pct` control** (separate from, and never driven by, the item-completion counter)
+- **Optional deadline** (`due_date`)
+- **Items grouped by `kind`** (Reading / Writing / Code / Tasks), each with a per-item `item_status` toggle (todo/doing/done/skipped)
+- Items render their `link` (via `CrossAppLinkPicker` / `DocumentRenderer`'s cross-app link rendering) or their linked `entry`/`task` when `entry_id`/`task_id` is set, or plain text when standalone
+- Drag-to-reorder items within the map
+
+---
+
+## Map Authoring Guideline
+
+> Instructions for generating a well-formed map from a rough description + goal. Self-contained; safe to lift into Granary's `CLAUDE.md`.
+
+**Input:** a rough topic/description + a goal (optionally: known materials — papers, notes, sessions).
+**Output:** one `POST /api/maps` body + an ordered list of `POST /api/maps/:id/items` bodies. Set **authoring fields only**; leave `status` (defaults `planned`), `progress_pct`, and `completed_on` untouched.
+
+**Rules**
+
+1. **Scope tightly — a map has edges.** `description` states what's in and, explicitly, what's out. A map must be *completable*; if the input spans more than ~2–3 weeks or ~12 items, split into multiple maps and say so.
+2. **Goal = a checkable definition of done.** Rewrite vague goals ("understand X") into an observable criterion ("can state and prove X"; "reproduce Fig. 3"; "formalize lemma Y in Lean"). 1–2 sentences.
+3. **Decompose items by `kind`:** `reading` (sources to read) → `writing` (prose/LaTeX to produce → Monolith) / `code` (code or proof to produce → Pyramid) → `task` (a concrete step that isn't itself an entry/session/doc). Follow the arc read → work out → synthesize/check.
+4. **Item titles are actionable and specific** ("Prove Hahn–Banach, analytic form", not "Hahn–Banach"). Acceptance detail goes in `notes`.
+5. **Links only when the target is real.** Use the loose shape `{app, ref_type, ref_id, label}` with canonical keys: Navigate `arxiv_id`; Scribe `note_id` or `flowchart_node` = `"{flowchart_id}:{node_key}"`; Monolith `project` (dir) or `file` (`project/path.tex`); Pyramid `session_id`; Granary `entry`/`document`/`map`. **Never fabricate an id.** If a target should exist but its id is unknown, leave `link` null, describe the intended target in `title`/`notes`, and prefix the title with `[locate]`. Always include a human `label`. Use `entry_id`/`task_id` only when reusing an *existing* Granary row.
+6. **Don't set progress or status.** Maps start `planned`; items start `item_status='todo'`. Progress is the user's to set.
+7. **`due_date`** only if the input implies one (`YYYY-MM-DD`, CST); else omit.
+8. **Order** items via `position` in intended working sequence (flat list, but ordered).
+
+**Worked example** — input: *"Get comfortable with Hahn–Banach and its use in duality; I want to prove the analytic form and see it applied."*
+
+```json
+// POST /api/maps
+{
+  "title": "Hahn–Banach & duality",
+  "description": "In scope: analytic + geometric Hahn–Banach, one duality application (bidual/reflexivity). Out of scope: general locally-convex TVS; weak-* topology beyond the basic pairing.",
+  "goal": "Can prove the analytic Hahn–Banach theorem from scratch and explain one concrete duality consequence.",
+  "tags": ["functional-analysis"]
+}
+```
+```json
+// POST /api/maps/:id/items  (in position order)
+[
+  { "kind": "reading", "title": "Read Brezis Ch.1 (Hahn–Banach, analytic form)", "position": 0,
+    "link": { "app": "scribe", "ref_type": "note_id", "ref_id": "<note-uuid>", "label": "Brezis Ch.1 notes" } },
+  { "kind": "reading", "title": "[locate] Survey on duality applications", "position": 1,
+    "notes": "Find an arXiv survey; attach arxiv_id once located." },
+  { "kind": "writing", "title": "Write up the analytic Hahn–Banach proof", "position": 2,
+    "link": { "app": "monolith", "ref_type": "project", "ref_id": "hahn-banach", "label": "HB write-up" } },
+  { "kind": "code", "title": "Formalize the analytic form in Lean", "position": 3,
+    "link": { "app": "pyramid", "ref_type": "session_id", "ref_id": "<session-uuid>", "label": "HB Lean" } },
+  { "kind": "task", "title": "State one duality consequence in your own words", "position": 4 }
+]
+```
+
+Note the `[locate]` item and `<...>` placeholders: unknown ids are flagged, never invented.
+
+**Optional convenience:** to make generation one-shot, let `POST /api/maps` accept an embedded `items: [...]` array (server creates the map, then the items in a transaction). Cleaner than round-tripping ids through two calls.
 
 ---
 

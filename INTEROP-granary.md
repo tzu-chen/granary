@@ -1,6 +1,6 @@
 # Granary — INTEROP.md
 
-Cross-app integration spec for Granary. This documents the endpoints and data shapes that sibling apps (Navigate, Scribe, Monolith) may call or reference.
+Cross-app integration spec for Granary. This documents the endpoints and data shapes that sibling apps (Navigate, Scribe, Monolith, Pyramid) may call or reference.
 
 **Base URL:** `http://localhost:3009/api`  
 **Port:** 3009 (server), 5174 (Vite dev)
@@ -36,10 +36,11 @@ interface Entry {
 }
 
 interface EntryLink {
-  app: 'navigate' | 'scribe' | 'monolith';
-  ref_type: 'arxiv_id' | 'paper_id' | 'note_id' | 'flowchart_node' | 'project';
+  app: 'navigate' | 'scribe' | 'monolith' | 'pyramid' | 'granary';
+  ref_type: 'arxiv_id' | 'paper_id' | 'note_id' | 'flowchart_node' | 'project' | 'session_id' | 'entry' | 'document' | 'map';
   ref_id: string;
-  label?: string;
+  label?: string;                     // Human-readable fallback — always set this. It's the only
+                                       // readable trace of the link if the target is renamed/deleted.
 }
 ```
 
@@ -125,6 +126,25 @@ GET /api/stats/forecast?days=30     → cards due per day for next N days
 GET /api/stats/review-history?start=&end=  → review log aggregated by date
 ```
 
+### Maps
+
+Granary's "Mapping" feature: a **map** is one bounded, completable unit of study/work, with a flat (non-hierarchical) list of heterogeneous `map_items` (reading/writing/code/task). See `CLAUDE.md` for the full data model and design rationale.
+
+**List / get maps:**
+```
+GET /api/maps?status=&tag=&search=
+GET /api/maps/:id
+```
+Returns maps (each with `item_counts: { total, done }`) and, for a single map, its ordered `map_items`.
+
+**Map items may carry a cross-app link** (`map_items.link`, loose shape `{app, ref_type, ref_id, label?}` — see "How Granary References Other Apps" below) or an internal reference (`entry_id` / `task_id` into Granary's own `entries`/`tasks` tables). A sibling app resolving a map should read `link` the same way it resolves any other Granary-originated cross-app link.
+
+**Liveness check:**
+```
+GET /api/maps/:id/resolve-links
+```
+Best-effort: pings each item's `link` target's existence-check endpoint (see table below) and returns per-item `ok`/`missing`/`unreachable`. Never blocks on a sibling app being down.
+
 ---
 
 ## Cross-App Reference Keys
@@ -135,18 +155,24 @@ When other apps link to Granary entities, use these identifiers:
 |--------|-----|---------|
 | Entry | `id` (UUID string) | `"a1b2c3d4-..."` |
 | Entry (by content) | `source` + `entry_type` | Source: `"Brezis Ch.4"`, type: `"theorem"` |
+| Document | `id` (UUID string) | `"b2c3d4e5-..."` |
+| Map | `id` (UUID string) | `"c3d4e5f6-..."` |
+
+Granary's own self-reference vocabulary (used when an entry/document/map links back into Granary itself, e.g. a map item pointing at an existing entry) is `ref_type` in (`entry`, `document`, `map`), with `ref_id` the target's UUID.
 
 ### How Granary References Other Apps
 
-Granary entries store cross-app links in the `links` JSON field:
+Granary entries and map items store cross-app links in a `links`/`link` JSON field. Every link should also carry a human-readable `label` — it's the only fallback that stays legible if the target is later renamed, moved, or deleted (this matters most for Monolith's `project`/`file` refs, which are directory/path-based and rename-fragile).
 
-| Target App | ref_type | ref_id | Example |
-|------------|----------|--------|---------|
-| Navigate | `arxiv_id` | arXiv ID string | `"2301.12345"` |
-| Navigate | `paper_id` | Navigate internal paper ID | `"42"` |
-| Scribe | `note_id` | Scribe note UUID | `"a1b2c3d4-..."` |
-| Scribe | `flowchart_node` | Flowchart node title | `"Hahn-Banach Theorem"` |
-| Monolith | `project` | Project directory name | `"mfg-paper"` |
+| Target App | Port (srv/vite) | ref_type | ref_id | Existence check | Example |
+|------------|------------------|----------|--------|------------------|---------|
+| Navigate | 3001 / 5173 | `arxiv_id` | arXiv ID string | `GET /api/papers` (filter by `arxiv_id`) | `"2301.12345"` |
+| Navigate | 3001 / 5173 | `paper_id` | Navigate internal paper ID | `GET /api/papers` (filter by `paper_id`) | `"42"` |
+| Scribe | 3003 / 5173 | `note_id` | Scribe note UUID | `GET /api/notes/:id` | `"a1b2c3d4-..."` |
+| Scribe | 3003 / 5173 | `flowchart_node` | **Stable composite key** `"{flowchart_id}:{node_key}"` — **not** the node title, which rots on rename | `GET /api/flowcharts/nodes/:flowchartId/:nodeKey` | `"abc-123:hahn-banach"` |
+| Monolith | 3005 / 5173 | `project` | Project directory name | `GET /api/projects` (list) | `"mfg-paper"` |
+| Monolith | 3005 / 5173 | `file` | `project/relative/path.tex` | Switch project + `GET /api/files/:path` | `"mfg-paper/intro.tex"` |
+| Pyramid | 3007 / 5177 | `session_id` | Pyramid session UUID | `GET /api/sessions/:id` | `"d4e5f6a7-..."` |
 
 ---
 

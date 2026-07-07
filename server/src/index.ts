@@ -14,6 +14,7 @@ import scribeRouter from './routes/scribe';
 import sourcesRouter from './routes/sources';
 import tasksRouter from './routes/tasks';
 import documentsRouter from './routes/documents';
+import mapsRouter from './routes/maps';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3009', 10);
@@ -34,6 +35,7 @@ app.use('/api/scribe/books', scribeRouter);
 app.use('/api/sources', sourcesRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/documents', documentsRouter);
+app.use('/api/maps', mapsRouter);
 
 // Serve static frontend in production
 const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');

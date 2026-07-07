@@ -3,11 +3,12 @@ import { CROSS_APP_OPTIONS } from '../../types';
 import styles from './CrossAppLinkPicker.module.css';
 
 interface Props {
-  onInsert: (syntax: string) => void;
+  onInsert?: (syntax: string) => void;
+  onPick?: (link: { app: string; ref_type: string; ref_id: string; label?: string }) => void;
   onClose: () => void;
 }
 
-export default function CrossAppLinkPicker({ onInsert, onClose }: Props) {
+export default function CrossAppLinkPicker({ onInsert, onPick, onClose }: Props) {
   const [app, setApp] = useState<string>('granary');
   const [refType, setRefType] = useState<string>(CROSS_APP_OPTIONS[0].refTypes[0].value);
   const [refId, setRefId] = useState('');
@@ -23,10 +24,20 @@ export default function CrossAppLinkPicker({ onInsert, onClose }: Props) {
 
   const handleInsert = () => {
     if (!refId.trim()) return;
+    if (onPick) {
+      onPick({
+        app,
+        ref_type: refType,
+        ref_id: refId.trim(),
+        label: label.trim() || undefined,
+      });
+      onClose();
+      return;
+    }
     const syntax = label.trim()
       ? `[[${app}:${refType}:${refId.trim()}|${label.trim()}]]`
       : `[[${app}:${refType}:${refId.trim()}]]`;
-    onInsert(syntax);
+    onInsert?.(syntax);
     onClose();
   };
 
