@@ -101,6 +101,46 @@ export function ListIcon({ size = 16, ...props }: IconProps) {
   );
 }
 
+export function SplitColsIcon({ size = 16, ...props }: IconProps) {
+  // 1×2 — two panes side by side (vertical divider)
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...defaultProps} {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="1.5" />
+      <path d="M12 4v16" />
+    </svg>
+  );
+}
+
+export function SplitRowsIcon({ size = 16, ...props }: IconProps) {
+  // 2×1 — two panes stacked (horizontal divider)
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...defaultProps} {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="1.5" />
+      <path d="M3 12h18" />
+    </svg>
+  );
+}
+
+export function SplitGridIcon({ size = 16, ...props }: IconProps) {
+  // 2×2 — four panes
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...defaultProps} {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="1.5" />
+      <path d="M12 4v16" />
+      <path d="M3 12h18" />
+    </svg>
+  );
+}
+
+export function SinglePaneIcon({ size = 16, ...props }: IconProps) {
+  // Single document view (no split)
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...defaultProps} {...props}>
+      <rect x="4" y="4" width="16" height="16" rx="1.5" />
+    </svg>
+  );
+}
+
 export function ArchiveIcon({ size = 16, ...props }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" {...defaultProps} {...props}>
