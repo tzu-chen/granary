@@ -164,8 +164,8 @@
 }
 
 .saveBtn {
-  background: var(--color-accent);
-  color: #fff;
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  color: var(--color-accent);
   border-color: var(--color-accent);
   font-weight: 500;
 }

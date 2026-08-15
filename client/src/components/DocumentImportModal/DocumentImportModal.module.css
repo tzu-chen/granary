@@ -1,7 +1,7 @@
 .backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--color-scrim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -161,8 +161,8 @@
 }
 
 .submit {
-  background: var(--color-accent);
-  color: #fff;
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  color: var(--color-accent);
   border-color: var(--color-accent);
 }
 
@@ -174,7 +174,7 @@
 .error {
   margin-top: 0.85rem;
   padding: 0.55rem 0.75rem;
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--color-danger-light);
   color: var(--color-danger);
   border-radius: var(--radius-sm);
   font-size: 0.85rem;

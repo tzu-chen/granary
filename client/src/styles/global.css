@@ -6,136 +6,20 @@
   padding: 0;
 }
 
+/* Colour lives in monolith-theme.css, imported before this file. Only
+ * non-colour tokens belong here — anything colour-shaped added back to this
+ * block would silently outrank the shared palette. */
 :root {
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f8f9fa;
-  --color-bg-tertiary: #f0f1f3;
-  --color-text-primary: #212529;
-  --color-text-secondary: #6c757d;
-  --color-text-muted: #adb5bd;
-  --color-border: #dee2e6;
-  --color-accent: #4263eb;
-  --color-accent-hover: #3b5bdb;
-  --color-accent-light: #edf2ff;
-  --color-success: #2b8a3e;
-  --color-warning: #e67700;
-  --color-danger: #c92a2a;
-  --color-info: #1c7ed6;
-
-  --color-entry-note: #6c757d;
-  --color-entry-question: #e8590c;
-
-  --color-code-fg: #b32d3a;
-  --color-code-bg: rgba(201, 42, 42, 0.08);
-
-  --color-priority-high: var(--color-danger);
-  --color-priority-medium: var(--color-warning);
-  --color-priority-low: var(--color-info);
-
-  --color-state-planned: var(--color-info);
-  --color-state-in-progress: var(--color-warning);
-  --color-state-done: var(--color-success);
-  --color-state-blocked: var(--color-danger);
-  --color-state-abandoned: var(--color-text-muted);
-
-  --color-state-planned-bg: rgba(59, 130, 246, 0.12);
-  --color-state-in-progress-bg: rgba(245, 158, 11, 0.16);
-  --color-state-done-bg: rgba(16, 185, 129, 0.14);
-  --color-state-blocked-bg: rgba(239, 68, 68, 0.13);
-  --color-state-abandoned-bg: rgba(134, 142, 150, 0.13);
-
-  --color-kind-goal: #8b5cf6;
-  --color-kind-task: #6b7280;
-  --color-kind-question: #f97316;
-
-  --color-kind-goal-bg: rgba(139, 92, 246, 0.14);
-  --color-kind-task-bg: rgba(107, 114, 128, 0.14);
-  --color-kind-question-bg: rgba(249, 115, 22, 0.14);
-
-  /* Map item kinds (reading / writing / code / task) */
-  --color-mapkind-reading: #1c7ed6;
-  --color-mapkind-writing: #7048e8;
-  --color-mapkind-code: #0ca678;
-  --color-mapkind-task: #868e96;
-  --color-mapkind-reading-bg: rgba(28, 126, 214, 0.12);
-  --color-mapkind-writing-bg: rgba(112, 72, 232, 0.12);
-  --color-mapkind-code-bg: rgba(12, 166, 120, 0.12);
-  --color-mapkind-task-bg: rgba(134, 142, 150, 0.12);
-
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
-  --transition: 150ms ease;
+  --radius-sm: var(--mono-radius-sm);
+  --radius-md: var(--mono-radius-md);
+  --radius-lg: var(--mono-radius-lg);
+  --transition: var(--mono-transition);
 
   font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
   font-size: 15px;
   line-height: 1.6;
   color: var(--color-text-primary);
   background-color: var(--color-bg-primary);
-}
-
-[data-theme="dark"] {
-  --color-bg-primary: #2e3440;
-  --color-bg-secondary: #3b4252;
-  --color-bg-tertiary: #434c5e;
-  --color-text-primary: #eceff4;
-  --color-text-secondary: #d8dee9;
-  --color-text-muted: #7b88a1;
-  --color-border: #4c566a;
-  --color-accent: #88c0d0;
-  --color-accent-hover: #8fbcbb;
-  --color-accent-light: #2e3a40;
-  --color-success: #a3be8c;
-  --color-warning: #ebcb8b;
-  --color-danger: #bf616a;
-  --color-info: #81a1c1;
-
-  --color-entry-note: #7b88a1;
-  --color-entry-question: #d08770;
-
-  --color-code-fg: #e8a5a0;
-  --color-code-bg: rgba(232, 165, 160, 0.12);
-
-  --color-priority-high: var(--color-danger);
-  --color-priority-medium: var(--color-warning);
-  --color-priority-low: var(--color-info);
-
-  --color-state-planned: var(--color-info);
-  --color-state-in-progress: var(--color-warning);
-  --color-state-done: var(--color-success);
-  --color-state-blocked: var(--color-danger);
-  --color-state-abandoned: var(--color-text-muted);
-
-  --color-state-planned-bg: rgba(129, 161, 193, 0.18);
-  --color-state-in-progress-bg: rgba(235, 203, 139, 0.18);
-  --color-state-done-bg: rgba(163, 190, 140, 0.18);
-  --color-state-blocked-bg: rgba(191, 97, 106, 0.18);
-  --color-state-abandoned-bg: rgba(123, 136, 161, 0.18);
-
-  --color-kind-goal: #a78bfa;
-  --color-kind-task: #9ca3af;
-  --color-kind-question: #fb923c;
-
-  --color-kind-goal-bg: rgba(167, 139, 250, 0.2);
-  --color-kind-task-bg: rgba(156, 163, 175, 0.18);
-  --color-kind-question-bg: rgba(251, 146, 60, 0.18);
-
-  /* Map item kinds (reading / writing / code / task) */
-  --color-mapkind-reading: #74c0fc;
-  --color-mapkind-writing: #b197fc;
-  --color-mapkind-code: #63e6be;
-  --color-mapkind-task: #adb5bd;
-  --color-mapkind-reading-bg: rgba(116, 192, 252, 0.16);
-  --color-mapkind-writing-bg: rgba(177, 151, 252, 0.16);
-  --color-mapkind-code-bg: rgba(99, 230, 190, 0.16);
-  --color-mapkind-task-bg: rgba(173, 181, 189, 0.16);
-
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 body {
@@ -202,9 +86,9 @@ pre.shiki .line {
   display: block;
   margin: 0;
   padding: 0.5em 1.25em;
-  border-bottom: 1px solid rgba(127, 127, 127, 0.22);
+  border-bottom: 1px solid var(--color-border);
   font-size: 0.75em;
-  color: #7d8590;
+  color: var(--color-text-muted);
   letter-spacing: 0.03em;
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, Consolas, monospace;
   user-select: none;

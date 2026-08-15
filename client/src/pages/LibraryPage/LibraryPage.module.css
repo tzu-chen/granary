@@ -59,12 +59,14 @@
 }
 
 .viewToggleActive {
-  background: var(--color-accent);
-  color: #fff;
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 
 .viewToggleActive:hover {
-  color: #fff;
+  color: var(--color-accent);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 
 .btnPrimary,
@@ -81,14 +83,15 @@
 }
 
 .btnPrimary {
-  background: var(--color-accent);
-  color: #fff;
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  color: var(--color-accent);
   border-color: var(--color-accent);
 }
 
 .btnPrimary:hover {
-  background: var(--color-accent-hover);
-  color: #fff;
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
 }
 
 .searchRow {
@@ -123,7 +126,7 @@
 
 .error {
   padding: 0.55rem 0.75rem;
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--color-danger-light);
   color: var(--color-danger);
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
@@ -167,12 +170,14 @@
 }
 
 .segmentActive {
-  background: var(--color-accent);
-  color: #fff;
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 
 .segmentActive:hover {
-  color: #fff;
+  color: var(--color-accent);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 
 .segmentCount {
@@ -185,8 +190,8 @@
 }
 
 .segmentActive .segmentCount {
-  background: rgba(255, 255, 255, 0.25);
-  color: #fff;
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--color-accent);
 }
 
 .sortControl {

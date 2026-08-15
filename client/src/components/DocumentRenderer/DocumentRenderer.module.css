@@ -163,16 +163,16 @@
 }
 
 .content :global(.cross-app-link[data-app="navigate"]) {
-  background: rgba(99, 102, 241, 0.12);
+  background: color-mix(in srgb, var(--mono-cat-2) 12%, transparent);
 }
 
 .content :global(.cross-app-link[data-app="scribe"]) {
-  background: rgba(245, 158, 11, 0.14);
+  background: color-mix(in srgb, var(--mono-cat-5) 14%, transparent);
   color: var(--color-warning);
 }
 
 .content :global(.cross-app-link[data-app="monolith"]) {
-  background: rgba(16, 185, 129, 0.14);
+  background: color-mix(in srgb, var(--mono-cat-4) 14%, transparent);
   color: var(--color-success);
 }
 

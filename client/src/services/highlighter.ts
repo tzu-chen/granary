@@ -1,4 +1,5 @@
 import { createHighlighter, type HighlighterGeneric } from 'shiki';
+import { MONOLITH_LIGHT, MONOLITH_DARK } from './shikiThemes';
 
 type Highlighter = HighlighterGeneric<string, string>;
 
@@ -9,7 +10,7 @@ const LANGS = [
   'markdown', 'diff', 'plaintext',
 ];
 
-const THEMES = ['github-light', 'github-dark'] as const;
+const THEMES = [MONOLITH_LIGHT, MONOLITH_DARK];
 
 let highlighter: Highlighter | null = null;
 let initPromise: Promise<void> | null = null;
@@ -66,7 +67,7 @@ export function highlightCode(code: string, lang: string): string {
   try {
     html = highlighter.codeToHtml(code, {
       lang: useLang,
-      themes: { light: 'github-light', dark: 'github-dark' },
+      themes: { light: 'monolith-parchment', dark: 'monolith-graphite' },
       defaultColor: 'light',
     });
   } catch {

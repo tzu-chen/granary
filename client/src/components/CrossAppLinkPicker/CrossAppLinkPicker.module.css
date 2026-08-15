@@ -1,7 +1,7 @@
 .backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--color-scrim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -165,8 +165,8 @@
 }
 
 .insert {
-  background: var(--color-accent);
-  color: #fff;
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  color: var(--color-accent);
   border-color: var(--color-accent);
 }
 

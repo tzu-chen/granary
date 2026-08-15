@@ -1,82 +1,73 @@
+/**
+ * Colour schemes.
+ *
+ * Two schemes, shared across the suite: "Parchment" (light) and "Graphite"
+ * (dark). The palette itself lives in `src/styles/monolith-theme.css` — this
+ * module only decides which theme is active and flips the attributes the
+ * stylesheet keys off. It deliberately does NOT write colours as inline styles:
+ * inline styles on <html> outrank any stylesheet, which would give the app a
+ * second, silently-winning source of colour.
+ *
+ * `swatch` is the one exception — a handful of representative colours the theme
+ * menu paints into its preview thumbnails, where there is no element to read
+ * the cascade from. Keep it in step with monolith-theme.css.
+ */
+
 export interface ColorScheme {
   id: string;
   name: string;
   type: 'light' | 'dark';
-  colors: Record<string, string>;
+  /** Preview-thumbnail colours only. Everything else reads the cascade. */
+  swatch: {
+    bg: string;
+    bgSecondary: string;
+    border: string;
+    text: string;
+    textSecondary: string;
+    accent: string;
+  };
 }
 
-const light: ColorScheme = {
-  id: 'light',
-  name: 'Light',
+const parchment: ColorScheme = {
+  id: 'parchment',
+  name: 'Parchment',
   type: 'light',
-  colors: {
-    'color-bg-primary': '#ffffff',
-    'color-bg-secondary': '#f8f9fa',
-    'color-bg-tertiary': '#f0f1f3',
-    'color-text-primary': '#212529',
-    'color-text-secondary': '#6c757d',
-    'color-text-muted': '#adb5bd',
-    'color-border': '#dee2e6',
-    'color-accent': '#4263eb',
-    'color-accent-hover': '#3b5bdb',
-    'color-accent-light': '#edf2ff',
-    'color-success': '#2b8a3e',
-    'color-warning': '#e67700',
-    'color-danger': '#c92a2a',
-    'color-info': '#1c7ed6',
-    'color-entry-note': '#6c757d',
-    'color-entry-question': '#e8590c',
-    'shadow-sm': '0 1px 2px rgba(0, 0, 0, 0.05)',
-    'shadow-md': '0 2px 8px rgba(0, 0, 0, 0.08)',
-    'shadow-lg': '0 4px 16px rgba(0, 0, 0, 0.1)',
+  swatch: {
+    bg: '#ffffff',
+    bgSecondary: '#faf8f4',
+    border: '#e2ddd3',
+    text: '#2c2820',
+    textSecondary: '#6b6358',
+    accent: '#8b5e3c',
   },
 };
 
-const dark: ColorScheme = {
-  id: 'dark',
-  name: 'Dark',
+const graphite: ColorScheme = {
+  id: 'graphite',
+  name: 'Graphite',
   type: 'dark',
-  colors: {
-    'color-bg-primary': '#2e3440',
-    'color-bg-secondary': '#3b4252',
-    'color-bg-tertiary': '#434c5e',
-    'color-text-primary': '#eceff4',
-    'color-text-secondary': '#d8dee9',
-    'color-text-muted': '#7b88a1',
-    'color-border': '#4c566a',
-    'color-accent': '#88c0d0',
-    'color-accent-hover': '#8fbcbb',
-    'color-accent-light': '#2e3a40',
-    'color-success': '#a3be8c',
-    'color-warning': '#ebcb8b',
-    'color-danger': '#bf616a',
-    'color-info': '#81a1c1',
-    'color-entry-note': '#7b88a1',
-    'color-entry-question': '#d08770',
-    'shadow-sm': '0 1px 3px rgba(0, 0, 0, 0.3)',
-    'shadow-md': '0 4px 12px rgba(0, 0, 0, 0.4)',
-    'shadow-lg': '0 8px 24px rgba(0, 0, 0, 0.5)',
+  swatch: {
+    bg: '#0f1013',
+    bgSecondary: '#15161a',
+    border: '#2b2e35',
+    text: '#e4e6ea',
+    textSecondary: '#c2c7cf',
+    accent: '#d99a4e',
   },
 };
 
-export const COLOR_SCHEMES: ColorScheme[] = [light, dark];
+export const COLOR_SCHEMES: ColorScheme[] = [parchment, graphite];
 
-export const DEFAULT_SCHEME_ID = 'light';
-export const DEFAULT_LIGHT_SCHEME_ID = 'light';
-export const DEFAULT_DARK_SCHEME_ID = 'dark';
+export const DEFAULT_SCHEME_ID = 'parchment';
+export const DEFAULT_LIGHT_SCHEME_ID = 'parchment';
+export const DEFAULT_DARK_SCHEME_ID = 'graphite';
 
 export function getSchemeById(id: string): ColorScheme {
-  return COLOR_SCHEMES.find(s => s.id === id) ?? light;
+  return COLOR_SCHEMES.find(s => s.id === id) ?? parchment;
 }
 
 export function applyColorScheme(scheme: ColorScheme): void {
-  const style = document.documentElement.style;
-  for (const [key, value] of Object.entries(scheme.colors)) {
-    style.setProperty(`--${key}`, value);
-  }
-  if (scheme.type === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  } else {
-    document.documentElement.removeAttribute('data-theme');
-  }
+  const root = document.documentElement;
+  root.dataset.theme = scheme.type;
+  root.dataset.scheme = scheme.id;
 }

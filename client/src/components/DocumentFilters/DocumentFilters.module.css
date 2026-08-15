@@ -70,8 +70,8 @@
 }
 
 .tagChipActive {
-  background: var(--color-accent);
-  color: #fff;
+  background: var(--color-accent-light);
+  color: var(--color-accent);
   border-color: var(--color-accent);
 }
 

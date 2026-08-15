@@ -83,9 +83,9 @@
 
 .submitBtn {
   padding: 0.4rem 1rem;
-  background: var(--color-success);
-  color: #fff;
-  border: none;
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
   border-radius: var(--radius-sm);
   font-weight: 500;
   transition: opacity var(--transition);

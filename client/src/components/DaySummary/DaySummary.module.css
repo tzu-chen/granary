@@ -91,9 +91,9 @@
 }
 
 .goalTabActive {
-  background: var(--color-accent);
+  background: var(--color-accent-light);
   border-color: var(--color-accent);
-  color: #fff;
+  color: var(--color-accent);
 }
 
 .noteRuled {
@@ -209,7 +209,7 @@
 }
 
 .goalCheckmark {
-  color: #fff;
+  color: var(--color-on-accent);
   font-size: 0.6rem;
   line-height: 1;
   font-weight: 700;
@@ -337,7 +337,7 @@
   padding: 0.1rem 0.4rem;
   border-radius: 999px;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -514,9 +514,9 @@
 
 .submitBtn {
   padding: 0.3rem 0.75rem;
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
   border-radius: var(--radius-sm);
   font-size: 0.82rem;
   font-weight: 500;

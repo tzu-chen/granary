@@ -59,35 +59,35 @@ export function ThemeMenu() {
                     <div className={styles.preview}>
                       <div
                         className={styles.swatchBg}
-                        style={{ background: scheme.colors['color-bg-primary'] }}
+                        style={{ background: scheme.swatch.bg }}
                       >
                         <div
                           className={styles.swatchBar}
                           style={{
-                            background: scheme.colors['color-bg-secondary'],
-                            borderBottom: `2px solid ${scheme.colors['color-border']}`,
+                            background: scheme.swatch.bgSecondary,
+                            borderBottom: `2px solid ${scheme.swatch.border}`,
                           }}
                         />
                         <div className={styles.swatchBody}>
                           <div
                             className={styles.swatchCard}
                             style={{
-                              background: scheme.colors['color-bg-secondary'],
-                              border: `1px solid ${scheme.colors['color-border']}`,
+                              background: scheme.swatch.bgSecondary,
+                              border: `1px solid ${scheme.swatch.border}`,
                             }}
                           >
                             <div
                               className={styles.swatchText}
-                              style={{ background: scheme.colors['color-text-primary'] }}
+                              style={{ background: scheme.swatch.text }}
                             />
                             <div
                               className={`${styles.swatchText} ${styles.swatchTextShort}`}
-                              style={{ background: scheme.colors['color-text-secondary'] }}
+                              style={{ background: scheme.swatch.textSecondary }}
                             />
                           </div>
                           <div
                             className={styles.swatchAccent}
-                            style={{ background: scheme.colors['color-accent'] }}
+                            style={{ background: scheme.swatch.accent }}
                           />
                         </div>
                       </div>

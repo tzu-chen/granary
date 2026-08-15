@@ -14,6 +14,8 @@ export const MIN_FONT_SIZE = 12;
 export const MAX_FONT_SIZE = 20;
 
 const LEGACY_MAP: Record<string, string> = {
+  light: DEFAULT_LIGHT_SCHEME_ID,
+  dark: DEFAULT_DARK_SCHEME_ID,
   'default-light': DEFAULT_LIGHT_SCHEME_ID,
   'solarized-light': DEFAULT_LIGHT_SCHEME_ID,
   'github-light': DEFAULT_LIGHT_SCHEME_ID,
